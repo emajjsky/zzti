@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.04"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .bg { fill: #fbf7ee; }
+      .ink { stroke: #121212; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .soft { stroke: #7c7c7c; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0.75; }
+      .fill-gray { fill: #ece6da; }
+      .fill-yellow { fill: #f0cd59; }
+      .fill-red { fill: #f46854; }
+      .paper { fill: #fffdf8; }
+    </style>
+  </defs>
+  <rect width="1024" height="1024" class="bg"/>
+  <rect width="1024" height="1024" filter="url(#paper)" opacity="0.8"/>
+
+  <g transform="translate(160 126)">
+    <ellipse cx="360" cy="334" rx="236" ry="286" class="fill-gray" opacity="0.68"/>
+    <path class="ink" d="M176 176c36-66 106-114 194-126 100-14 188 10 252 78 56 60 78 140 70 248-8 88-38 156-96 212-64 62-140 90-236 88-100-2-182-36-244-110-52-64-72-138-56-238 10-62 42-112 116-152Z"/>
+    <circle cx="302" cy="332" r="54" class="paper"/>
+    <circle cx="454" cy="336" r="54" class="paper"/>
+    <circle cx="302" cy="332" r="54" class="ink"/>
+    <circle cx="454" cy="336" r="54" class="ink"/>
+    <circle cx="302" cy="332" r="18" fill="#121212"/>
+    <circle cx="454" cy="336" r="18" fill="#121212"/>
+    <path class="ink" d="M250 256c34-16 70-20 104-8M432 254c36-18 74-18 112-4"/>
+    <path class="ink" d="M286 468c38-10 82-12 126-4 26 6 50 16 78 36M340 500c18 10 34 12 52 2"/>
+    <path class="soft" d="M214 140c74-46 148-62 234-50M198 570c70 26 142 34 220 24M450 588c42 6 88 0 132-20"/>
+    <path class="ink" d="M214 76c26-42 60-68 106-80M316 34c12-34 30-60 58-80M388 18c26-20 58-30 98-28M504 38c30 4 58 14 84 38"/>
+    <path class="ink" d="M222 662c28-8 52-10 80-6M430 666c32 4 60 2 90-8"/>
+    <path class="fill-red" d="M100 318c14-18 40-20 58-2 16 16 14 42-4 58-18 16-44 14-58-4-14-18-12-38 4-52Z"/>
+    <path class="ink" d="M100 318c14-18 40-20 58-2 16 16 14 42-4 58-18 16-44 14-58-4-14-18-12-38 4-52Z"/>
+    <path class="fill-yellow" d="M626 308l52-42 40 50-48 40Z"/>
+    <path class="ink" d="M626 308l52-42 40 50-48 40Z"/>
+    <path class="ink" d="M658 286c12 0 22 4 30 12M644 322c16 6 28 4 40-4"/>
+    <path class="ink" d="M70 486c16-8 34-10 54-8M694 490c18-6 36-4 56 6"/>
+    <path class="soft" d="M118 220c26-16 54-24 88-26M580 220c30-6 58 0 88 18"/>
+    <path class="ink" d="M770 166c26 4 48 16 62 38M64 180c-22 18-34 38-40 66"/>
+  </g>
+</svg>
