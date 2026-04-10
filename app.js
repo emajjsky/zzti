@@ -6,20 +6,7 @@ const PROFILE_CONFIG = {
   full: { core: 32, calibration: 10, antiConflict: 5, hidden: 3 },
 };
 
-const PROFILE_META = {
-  quick: {
-    label: "快测卷",
-    tone: "35 题，适合先测一轮，看自己大概烂在哪。",
-  },
-  standard: {
-    label: "标准卷",
-    tone: "40 题，信息量和传播性最平衡，默认推荐。",
-  },
-  full: {
-    label: "发疯卷",
-    tone: "50 题，追求更完整的人格归因，适合重症用户。",
-  },
-};
+const ACTIVE_PROFILE = "full";
 
 const DIMENSION_ORDER = [
   "上头度",
@@ -222,16 +209,12 @@ const state = {
   paper: null,
   currentIndex: 0,
   answers: [],
-  profile: "standard",
 };
 
 const dom = {
   startButton: document.getElementById("startButton"),
-  rerollButton: document.getElementById("rerollButton"),
+  homeButton: document.getElementById("homeButton"),
   loadStatus: document.getElementById("loadStatus"),
-  profilePicker: document.getElementById("profilePicker"),
-  profileHint: document.getElementById("profileHint"),
-  personaGrid: document.getElementById("personaGrid"),
   landingSection: document.getElementById("landingSection"),
   quizSection: document.getElementById("quizSection"),
   resultSection: document.getElementById("resultSection"),
@@ -254,9 +237,6 @@ const dom = {
   dimensionList: document.getElementById("dimensionList"),
   genreTags: document.getElementById("genreTags"),
   roleTags: document.getElementById("roleTags"),
-  hiddenCard: document.getElementById("hiddenCard"),
-  hiddenList: document.getElementById("hiddenList"),
-  resultProfileTag: document.getElementById("resultProfileTag"),
   resultSerial: document.getElementById("resultSerial"),
   resultRank: document.getElementById("resultRank"),
   posterCode: document.getElementById("posterCode"),
@@ -416,37 +396,8 @@ function updateStartButton() {
     return;
   }
 
-  const meta = PROFILE_META[state.profile];
   dom.startButton.disabled = false;
-  dom.startButton.textContent = `开始测脑 · ${meta.label} ${getProfileQuestionCount(state.profile)}题`;
-}
-
-function setProfile(profile) {
-  state.profile = profile;
-  const meta = PROFILE_META[profile];
-  dom.profileHint.textContent = meta.tone;
-
-  Array.from(dom.profilePicker.children).forEach((card) => {
-    card.classList.toggle("is-active", card.dataset.profile === profile);
-  });
-
-  updateStartButton();
-}
-
-function renderProfilePicker() {
-  dom.profilePicker.innerHTML = "";
-  Object.entries(PROFILE_META).forEach(([profile, meta]) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "profile-card";
-    button.dataset.profile = profile;
-    button.innerHTML = `<strong>${meta.label}</strong><span>${meta.tone}</span>`;
-    button.addEventListener("click", () => {
-      setProfile(profile);
-    });
-    dom.profilePicker.appendChild(button);
-  });
-  setProfile(state.profile);
+  dom.startButton.textContent = `开始发疯测试 · ${getProfileQuestionCount(ACTIVE_PROFILE)}题`;
 }
 
 function getQuestionTypeLabel(question) {
@@ -478,18 +429,8 @@ function showSection(section) {
   dom.resultSection.classList.toggle("is-hidden", section !== "result");
 }
 
-function renderPersonaChips() {
-  dom.personaGrid.innerHTML = "";
-  Object.entries(PERSONA_LIBRARY).forEach(([name, meta]) => {
-    const chip = document.createElement("article");
-    chip.className = "persona-chip";
-    chip.innerHTML = `<strong>${name}</strong><span>${meta.tagline}</span>`;
-    dom.personaGrid.appendChild(chip);
-  });
-}
-
 function startTest() {
-  state.paper = buildPaper(state.profile);
+  state.paper = buildPaper(ACTIVE_PROFILE);
   state.answers = [];
   state.currentIndex = 0;
   showSection("quiz");
@@ -641,16 +582,16 @@ function pickPersona(dimensionScores) {
 
 function getVerdictLabel(index) {
   if (index < 20) {
-    return "现实主义漏网之鱼";
+    return "还没彻底烂透";
   }
   if (index < 40) {
-    return "轻度上头体质";
+    return "轻度发病嘴硬怪";
   }
   if (index < 60) {
-    return "稳定供梗体质";
+    return "稳定供梗中度患者";
   }
   if (index < 80) {
-    return "高危降智样本";
+    return "高浓度降智污染源";
   }
   return "钛合金脑残圣体";
 }
@@ -662,20 +603,19 @@ function getTopDimensions(dimensionScores, count = 3) {
     .map(([dimension, score]) => ({ dimension, score }));
 }
 
-function buildSampleCode(personaName, brainlessIndex, hiddenScores) {
+function buildSampleCode(personaName, brainlessIndex) {
   const initials = personaName
     .slice(0, 3)
     .split("")
     .map((char) => char.charCodeAt(0).toString(16).slice(-2))
     .join("")
     .toUpperCase();
-  const hiddenBoost = Object.values(hiddenScores).reduce((sum, value) => sum + value, 0) % 100;
-  return `ZZ-${String(brainlessIndex).padStart(2, "0")}${String(hiddenBoost).padStart(2, "0")}-${initials}`;
+  return `ZZ-${String(brainlessIndex).padStart(2, "0")}-${initials}`;
 }
 
 function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   const dimensionText = topDimensions.map((item) => `${item.dimension}${item.score}`).join(" / ");
-  return `你的高发故障位集中在 ${dimensionText}。放进 ${personaMeta.genres[0]} 赛道，最容易被剪成 ${personaMeta.roles[0]} 位，负责把全场离谱值往上再抬一档。当前脑残指数 ${brainlessIndex}，已具备稳定供梗能力。`;
+  return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲玉佩都会自动坐直的程度。`;
 }
 
 function renderDimensionList(dimensionScores) {
@@ -707,39 +647,13 @@ function renderTags(container, values) {
   });
 }
 
-function renderHiddenList(hiddenScores) {
-  const triggered = Object.entries(hiddenScores)
-    .filter(([, score]) => score >= 70)
-    .sort((left, right) => right[1] - left[1]);
-
-  dom.hiddenList.innerHTML = "";
-  if (!triggered.length) {
-    dom.hiddenCard.classList.add("is-hidden");
-    return;
-  }
-
-  dom.hiddenCard.classList.remove("is-hidden");
-  triggered.forEach(([name, score]) => {
-    const meta = HIDDEN_LIBRARY[name];
-    const item = document.createElement("article");
-    item.className = "hidden-item";
-    item.innerHTML = `<strong>${meta.title} / ${score}</strong><p>${meta.copy}</p>`;
-    dom.hiddenList.appendChild(item);
-  });
-}
-
-function buildShareText(personaName, personaMeta, brainlessIndex, hiddenScores) {
-  const hiddenText = Object.entries(hiddenScores)
-    .filter(([, score]) => score >= 70)
-    .map(([name]) => name)
-    .join("、");
+function buildShareText(personaName, personaMeta, brainlessIndex) {
   return [
     `ZZTI 测试结果：${personaName}`,
-    `试卷模式：${PROFILE_META[state.paper.profile].label}`,
     `脑残指数：${brainlessIndex}`,
     `适配赛道：${personaMeta.genres.join(" / ")}`,
     `高频角色位：${personaMeta.roles.join(" / ")}`,
-    hiddenText ? `隐藏诊断：${hiddenText}` : null,
+    `诊断结论：脑子已经被短剧腌透了`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -747,18 +661,15 @@ function buildShareText(personaName, personaMeta, brainlessIndex, hiddenScores) 
 
 function renderResult() {
   const dimensionScores = calculateDimensionScores();
-  const hiddenScores = calculateHiddenScores();
   const brainlessIndex = calculateBrainlessIndex(dimensionScores);
   const personaName = pickPersona(dimensionScores);
   const personaMeta = PERSONA_LIBRARY[personaName];
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
-  const profileMeta = PROFILE_META[state.paper.profile];
-  const sampleCode = buildSampleCode(personaName, brainlessIndex, hiddenScores);
+  const sampleCode = buildSampleCode(personaName, brainlessIndex);
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
-  dom.resultSubtitle.textContent = personaMeta.tagline;
-  dom.resultProfileTag.textContent = `${profileMeta.label} / ${getProfileQuestionCount(state.paper.profile)}题`;
+  dom.resultSubtitle.textContent = `很不幸，${personaMeta.tagline}`;
   dom.resultSerial.textContent = sampleCode;
   dom.resultRank.textContent = verdictLabel;
   dom.posterCode.textContent = sampleCode;
@@ -767,17 +678,16 @@ function renderResult() {
   dom.posterStory.textContent = buildPosterStory(personaMeta, brainlessIndex, topDimensions);
   dom.brainlessIndex.textContent = `${brainlessIndex}`;
   dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
-  dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%`;
-  dom.resultVerdict.textContent = personaMeta.verdict;
+  dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
+  dom.resultVerdict.textContent = `${personaMeta.verdict} 说白了，你不是没见过离谱，是你已经开始替离谱辩护了。`;
   dom.resultQuote.textContent = personaMeta.quote;
 
   renderDimensionList(dimensionScores);
   renderTags(dom.genreTags, personaMeta.genres);
   renderTags(dom.roleTags, personaMeta.roles);
-  renderHiddenList(hiddenScores);
 
   dom.copyButton.onclick = async () => {
-    const text = buildShareText(personaName, personaMeta, brainlessIndex, hiddenScores);
+    const text = buildShareText(personaName, personaMeta, brainlessIndex);
     try {
       await navigator.clipboard.writeText(text);
       dom.copyButton.textContent = "已复制";
@@ -804,7 +714,7 @@ async function loadBank() {
     }
     state.bank = await response.json();
     updateStartButton();
-    dom.loadStatus.textContent = `题库已接入：${state.bank.counts.total_questions} 题。`;
+    dom.loadStatus.textContent = `题库已接入：${state.bank.counts.total_questions} 题，固定发疯卷直接开测。`;
   } catch (error) {
     dom.startButton.textContent = "题库加载失败";
     dom.loadStatus.textContent = "当前站点需要通过 HTTP 或 GitHub Pages 打开，不能直接 file:// 打开。";
@@ -820,11 +730,9 @@ function bindEvents() {
     startTest();
   });
 
-  dom.rerollButton.addEventListener("click", () => {
-    const firstChip = document.querySelector(".persona-chip");
-    if (firstChip) {
-      firstChip.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
+  dom.homeButton.addEventListener("click", () => {
+    showSection("landing");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   dom.restartButton.addEventListener("click", () => {
@@ -833,8 +741,6 @@ function bindEvents() {
 }
 
 function init() {
-  renderProfilePicker();
-  renderPersonaChips();
   bindEvents();
   loadBank();
 }
