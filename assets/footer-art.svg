@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 768" fill="none">
+  <defs>
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="14" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.04"/>
+      </feComponentTransfer>
+    </filter>
+    <style>
+      .bg { fill: #faf5ea; }
+      .ink { stroke: #121212; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+      .soft { stroke: #7d7d7d; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0.7; }
+      .fill-gray { fill: #ece6da; }
+      .fill-yellow { fill: #f0cd59; }
+      .fill-red { fill: #f26a56; }
+      .paper { fill: #fffdf8; }
+    </style>
+  </defs>
+  <rect width="1536" height="768" class="bg"/>
+  <rect width="1536" height="768" filter="url(#paper)" opacity="0.8"/>
+
+  <g transform="translate(92 190)">
+    <ellipse cx="130" cy="120" rx="98" ry="100" class="fill-gray" opacity="0.68"/>
+    <path class="ink" d="M48 86c24-48 80-76 138-70 80 8 122 64 118 146-2 54-20 92-58 122-40 32-84 42-136 34-58-8-100-38-122-92-18-44-8-92 28-140Z"/>
+    <circle cx="110" cy="128" r="22" class="paper"/><circle cx="176" cy="130" r="22" class="paper"/>
+    <circle cx="110" cy="128" r="22" class="ink"/><circle cx="176" cy="130" r="22" class="ink"/>
+    <circle cx="110" cy="128" r="8" fill="#121212"/><circle cx="176" cy="130" r="8" fill="#121212"/>
+    <path class="ink" d="M100 188c18-8 38-10 60-6 12 2 22 8 34 16"/>
+    <path class="soft" d="M60 48c44-22 88-26 132-12M74 252c28 14 58 18 92 14"/>
+  </g>
+
+  <g transform="translate(324 204)">
+    <ellipse cx="130" cy="120" rx="92" ry="96" class="fill-gray" opacity="0.66"/>
+    <path class="ink" d="M58 88c16-40 62-64 114-64 80 0 130 56 130 136 0 58-20 100-60 126-42 28-90 34-140 22-60-14-96-50-108-106-8-40 6-78 64-114Z"/>
+    <circle cx="118" cy="126" r="20" class="paper"/><circle cx="178" cy="126" r="20" class="paper"/>
+    <circle cx="118" cy="126" r="20" class="ink"/><circle cx="178" cy="126" r="20" class="ink"/>
+    <circle cx="118" cy="126" r="7" fill="#121212"/><circle cx="178" cy="126" r="7" fill="#121212"/>
+    <path class="ink" d="M110 196c18-10 40-12 70-6M138 196c12 8 24 8 34 0"/>
+    <path class="fill-yellow" d="M8 118l28-24 24 26-28 24Z"/><path class="ink" d="M8 118l28-24 24 26-28 24Z"/>
+  </g>
+
+  <g transform="translate(652 204)">
+    <ellipse cx="116" cy="112" rx="82" ry="84" class="fill-gray" opacity="0.58"/>
+    <path class="ink" d="M48 88c14-36 54-60 102-62 62-2 108 28 126 84 18 56 2 118-44 154-42 34-92 42-146 22-58-20-86-62-84-126 0-28 14-52 46-72Z"/>
+    <circle cx="100" cy="120" r="18" class="paper"/><circle cx="154" cy="120" r="18" class="paper"/>
+    <circle cx="100" cy="120" r="18" class="ink"/><circle cx="154" cy="120" r="18" class="ink"/>
+    <circle cx="100" cy="120" r="6" fill="#121212"/><circle cx="154" cy="120" r="6" fill="#121212"/>
+    <path class="ink" d="M90 178c18-8 34-10 54-8 14 2 24 8 34 16"/>
+    <path class="fill-red" d="M254 68c20 0 34 16 34 34s-14 34-34 34-34-14-34-34 14-34 34-34Z"/>
+    <path class="ink" d="M254 68c20 0 34 16 34 34s-14 34-34 34-34-14-34-34 14-34 34-34Z"/>
+    <path class="soft" d="M44 42c32-18 66-20 106-10"/>
+  </g>
+
+  <g transform="translate(970 190)">
+    <ellipse cx="134" cy="118" rx="98" ry="102" class="fill-gray" opacity="0.68"/>
+    <path class="ink" d="M48 76c30-46 86-68 146-62 78 10 122 62 120 142-2 56-22 96-60 128-42 34-90 42-144 30-58-14-98-48-118-102-12-36-4-84 56-136Z"/>
+    <circle cx="118" cy="124" r="22" class="paper"/><circle cx="190" cy="124" r="22" class="paper"/>
+    <circle cx="118" cy="124" r="22" class="ink"/><circle cx="190" cy="124" r="22" class="ink"/>
+    <circle cx="118" cy="124" r="8" fill="#121212"/><circle cx="190" cy="124" r="8" fill="#121212"/>
+    <path class="ink" d="M114 178c14-6 30-10 48-8 12 2 26 6 42 18"/>
+    <path class="soft" d="M76 34c46-20 90-20 130-8M98 248c36 12 70 16 108 10"/>
+    <path class="fill-yellow" d="M248 228l30-28 28 32-28 26Z"/><path class="ink" d="M248 228l30-28 28 32-28 26Z"/>
+  </g>
+
+  <g transform="translate(1236 200)">
+    <ellipse cx="114" cy="112" rx="84" ry="92" class="fill-gray" opacity="0.62"/>
+    <path class="ink" d="M42 86c18-38 56-62 102-66 68-4 112 28 128 94 16 64 0 118-48 152-42 30-90 34-144 14-54-20-80-58-80-118 0-30 12-54 42-76Z"/>
+    <circle cx="94" cy="122" r="18" class="paper"/><circle cx="148" cy="122" r="18" class="paper"/>
+    <circle cx="94" cy="122" r="18" class="ink"/><circle cx="148" cy="122" r="18" class="ink"/>
+    <circle cx="94" cy="122" r="7" fill="#121212"/><circle cx="148" cy="122" r="7" fill="#121212"/>
+    <path class="ink" d="M86 178c18-8 34-8 54-4 12 2 22 8 32 18"/>
+    <path class="fill-red" d="M-6 164l18-40 40 20-18 36Z"/><path class="ink" d="M-6 164l18-40 40 20-18 36Z"/>
+  </g>
+
+  <path class="soft" d="M70 92c24-6 46-6 68 2M1400 90c18-4 42-2 66 8M684 608c62 14 132 14 194 0"/>
+</svg>
