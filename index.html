@@ -8,12 +8,6 @@
       name="description"
       content="ZZTI 智障钛：短剧脑回路公开测试站。500题题库，16个核心人格，2个隐藏人格。"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Bungee:wght@400&family=IBM+Plex+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
     <link rel="stylesheet" href="./styles.css" />
     <script defer src="./app.js"></script>
   </head>
@@ -22,12 +16,11 @@
     <header class="site-header">
       <a class="brand" href="#top">
         <span class="brand-badge">ZZTI</span>
-        <span class="brand-text">智障钛公开测试站</span>
+        <span class="brand-text">智障钛</span>
       </a>
-      <div class="header-stats">
+      <div class="header-actions">
         <span class="stat-pill">500题题库</span>
-        <span class="stat-pill">16+2人格</span>
-        <span class="stat-pill">标准卷40题</span>
+        <button class="header-home" id="homeButton" type="button">返回主页</button>
       </div>
     </header>
 
@@ -36,67 +29,47 @@
         <div class="hero-grid">
           <div class="hero-main">
             <p class="eyebrow">短剧脑回路公开普查</p>
-            <h1 class="hero-title">
-              ZZTI<br />
-              智障钛
-            </h1>
-            <p class="hero-copy">
-              这不是 MBTI，也不是正经心理测评。<br />
-              它只负责一件事：量化你的短剧脑回路，测出你的脑残指数，再判断你最适合被投放进哪种离谱剧情里。
-            </p>
-            <section class="profile-select-block" aria-label="试卷模式">
-              <div class="section-head compact">
-                <h2>抽卷模式</h2>
-                <p id="profileHint">默认使用标准卷，40 题，适合公开传播。</p>
+            <div class="hero-title-art">
+              <img class="hero-art-image" src="./assets/hero-art.png" alt="智障钛主视觉" />
+              <div class="hero-title-overlay">
+                <span class="hero-mode-pill">固定发疯卷 / 50题</span>
+                <h1 class="hero-title">智障钛</h1>
+                <p class="hero-subcopy">一套把你短剧脑子测出裂纹的公开测试站。</p>
               </div>
-              <div class="profile-picker" id="profilePicker"></div>
-            </section>
+            </div>
+            <p class="hero-copy">
+              不是来安慰你的。<br />
+              它只负责把你对白月光、退婚流、掉马打脸、认亲广播和系统弹窗的上瘾程度，当场验成一张公开处刑单。
+            </p>
             <div class="hero-actions">
               <button class="action-button primary" id="startButton" disabled>
                 题库加载中...
               </button>
-              <button class="action-button secondary" id="rerollButton">
-                先看人设
-              </button>
             </div>
             <p class="status-line" id="loadStatus">
-              正在接入 500 题题库。
+              固定发疯卷正在接入 500 题题库。
             </p>
           </div>
 
           <aside class="hero-side">
-            <article class="sticker-card accent-red">
+            <figure class="art-card">
+              <img class="art-image" src="./assets/deco-art.png" alt="脑残抽象装饰图" />
+            </figure>
+
+            <article class="sticker-card accent-red taunt-card">
               <p class="card-tag">脑残指数</p>
               <h2 class="card-title">不是你笨</h2>
               <p class="card-copy">
-                是你已经被白月光、退婚流、掉马打脸、认亲广播和系统提示框彻底腌入味了。
+                你是主动把判断力打包扔给白月光、龙王和系统弹窗了。<br />
+                只要有人退婚、认亲、掉马、扇脸，你那点理智就会像廉价塑料凳一样当场裂开。
               </p>
-            </article>
-
-            <article class="sticker-card accent-lime offset">
-              <p class="card-tag">测试机制</p>
-              <ul class="bullet-list">
-                <li>从 500 题库里临场抽卷</li>
-                <li>覆盖 8 个维度</li>
-                <li>结果落在 16 个核心人格</li>
-                <li>极端答案会触发 2 个隐藏人格</li>
-              </ul>
             </article>
           </aside>
         </div>
 
-        <div class="warning-strip">
-          <span class="warning-label">隐藏人格</span>
-          <p>极端答法会触发：脑残编剧 / 红果综合症患者。</p>
-        </div>
-
-        <section class="persona-wall">
-          <div class="section-head">
-            <h2>本服常驻脑回路</h2>
-            <p>结果名必须一眼有梗，一眼有画面。</p>
-          </div>
-          <div class="persona-grid" id="personaGrid"></div>
-        </section>
+        <figure class="brainrot-banner">
+          <img class="banner-image" src="./assets/footer-art.png" alt="脑残抽象横幅" />
+        </figure>
       </section>
 
       <section class="quiz-panel is-hidden" id="quizSection" aria-live="polite">
@@ -133,7 +106,6 @@
           <h2 class="result-title" id="resultTitle">你是【接绿活佛】</h2>
           <p class="result-subtitle" id="resultSubtitle"></p>
           <div class="result-meta-strip">
-            <span class="result-chip" id="resultProfileTag">标准卷</span>
             <span class="result-chip" id="resultSerial">ZZTI-0000</span>
             <span class="result-chip" id="resultRank">稳定供梗体质</span>
           </div>
@@ -142,13 +114,20 @@
         <div class="result-grid">
           <article class="result-card main-result" id="resultCard">
             <div class="result-poster">
-              <p class="poster-kicker">ZZTI 档案卡</p>
-              <div class="poster-topline">
-                <span class="poster-code" id="posterCode">ZZ-000</span>
-                <span class="poster-rank" id="posterRank">稳定供梗体质</span>
+              <p class="poster-kicker">脑残事故单</p>
+              <div class="poster-layout">
+                <div class="poster-copy-wrap">
+                  <div class="poster-topline">
+                    <span class="poster-code" id="posterCode">ZZ-000</span>
+                    <span class="poster-rank" id="posterRank">稳定供梗体质</span>
+                  </div>
+                  <h3 class="poster-title" id="posterTitle">接绿活佛</h3>
+                  <p class="poster-story" id="posterStory"></p>
+                </div>
+                <div class="poster-art-frame">
+                  <img class="poster-art-image" src="./assets/deco-art.png" alt="结果装饰图" />
+                </div>
               </div>
-              <h3 class="poster-title" id="posterTitle">接绿活佛</h3>
-              <p class="poster-story" id="posterStory"></p>
             </div>
 
             <div class="meter-block">
@@ -184,11 +163,6 @@
             <div class="tag-cloud" id="genreTags"></div>
             <h3 class="subhead">高频角色位</h3>
             <div class="tag-cloud" id="roleTags"></div>
-          </article>
-
-          <article class="result-card side-card" id="hiddenCard">
-            <h3>隐藏诊断</h3>
-            <div class="hidden-list" id="hiddenList"></div>
           </article>
         </div>
       </section>
