@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZZTI 智障钛</title>
+    <meta
+      name="description"
+      content="ZZTI 智障钛：短剧脑回路公开测试站。500题题库，16个核心人格，2个隐藏人格。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bungee:wght@400&family=IBM+Plex+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="bg-noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#top">
+        <span class="brand-badge">ZZTI</span>
+        <span class="brand-text">智障钛公开测试站</span>
+      </a>
+      <div class="header-stats">
+        <span class="stat-pill">500题题库</span>
+        <span class="stat-pill">16+2人格</span>
+        <span class="stat-pill">标准卷40题</span>
+      </div>
+    </header>
+
+    <main class="page-shell" id="top">
+      <section class="hero-panel" id="landingSection">
+        <div class="hero-grid">
+          <div class="hero-main">
+            <p class="eyebrow">短剧脑回路公开普查</p>
+            <h1 class="hero-title">
+              ZZTI<br />
+              智障钛
+            </h1>
+            <p class="hero-copy">
+              这不是 MBTI，也不是正经心理测评。<br />
+              它只负责一件事：量化你的短剧脑回路，测出你的脑残指数，再判断你最适合被投放进哪种离谱剧情里。
+            </p>
+            <section class="profile-select-block" aria-label="试卷模式">
+              <div class="section-head compact">
+                <h2>抽卷模式</h2>
+                <p id="profileHint">默认使用标准卷，40 题，适合公开传播。</p>
+              </div>
+              <div class="profile-picker" id="profilePicker"></div>
+            </section>
+            <div class="hero-actions">
+              <button class="action-button primary" id="startButton" disabled>
+                题库加载中...
+              </button>
+              <button class="action-button secondary" id="rerollButton">
+                先看人设
+              </button>
+            </div>
+            <p class="status-line" id="loadStatus">
+              正在接入 500 题题库。
+            </p>
+          </div>
+
+          <aside class="hero-side">
+            <article class="sticker-card accent-red">
+              <p class="card-tag">脑残指数</p>
+              <h2 class="card-title">不是你笨</h2>
+              <p class="card-copy">
+                是你已经被白月光、退婚流、掉马打脸、认亲广播和系统提示框彻底腌入味了。
+              </p>
+            </article>
+
+            <article class="sticker-card accent-lime offset">
+              <p class="card-tag">测试机制</p>
+              <ul class="bullet-list">
+                <li>从 500 题库里临场抽卷</li>
+                <li>覆盖 8 个维度</li>
+                <li>结果落在 16 个核心人格</li>
+                <li>极端答案会触发 2 个隐藏人格</li>
+              </ul>
+            </article>
+          </aside>
+        </div>
+
+        <div class="warning-strip">
+          <span class="warning-label">隐藏人格</span>
+          <p>极端答法会触发：脑残编剧 / 红果综合症患者。</p>
+        </div>
+
+        <section class="persona-wall">
+          <div class="section-head">
+            <h2>本服常驻脑回路</h2>
+            <p>结果名必须一眼有梗，一眼有画面。</p>
+          </div>
+          <div class="persona-grid" id="personaGrid"></div>
+        </section>
+      </section>
+
+      <section class="quiz-panel is-hidden" id="quizSection" aria-live="polite">
+        <div class="quiz-topbar">
+          <div class="progress-meta">
+            <span class="question-counter" id="questionCounter">第 1 / 40 题</span>
+            <span class="question-type" id="questionType">核心题</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-meta progress-meta-right">
+            <span class="question-counter" id="brainMeter">脑子剩余 100%</span>
+          </div>
+        </div>
+
+        <div class="quiz-layout">
+          <article class="question-card">
+            <div class="question-stickers">
+              <span class="sticker-label red" id="questionGenre">现代女频</span>
+              <span class="sticker-label yellow" id="questionSource">接绿活佛</span>
+            </div>
+            <p class="question-kicker" id="questionKicker">短剧现场：有人准备给你上强度。</p>
+            <h2 class="question-title" id="questionStem"></h2>
+          </article>
+
+          <div class="options-grid" id="optionsContainer"></div>
+        </div>
+      </section>
+
+      <section class="result-panel is-hidden" id="resultSection">
+        <div class="result-hero">
+          <div class="result-badge">测试结果</div>
+          <h2 class="result-title" id="resultTitle">你是【接绿活佛】</h2>
+          <p class="result-subtitle" id="resultSubtitle"></p>
+          <div class="result-meta-strip">
+            <span class="result-chip" id="resultProfileTag">标准卷</span>
+            <span class="result-chip" id="resultSerial">ZZTI-0000</span>
+            <span class="result-chip" id="resultRank">稳定供梗体质</span>
+          </div>
+        </div>
+
+        <div class="result-grid">
+          <article class="result-card main-result" id="resultCard">
+            <div class="result-poster">
+              <p class="poster-kicker">ZZTI 档案卡</p>
+              <div class="poster-topline">
+                <span class="poster-code" id="posterCode">ZZ-000</span>
+                <span class="poster-rank" id="posterRank">稳定供梗体质</span>
+              </div>
+              <h3 class="poster-title" id="posterTitle">接绿活佛</h3>
+              <p class="poster-story" id="posterStory"></p>
+            </div>
+
+            <div class="meter-block">
+              <div class="meter-head">
+                <span>脑残指数</span>
+                <strong id="brainlessIndex">0</strong>
+              </div>
+              <div class="brain-meter">
+                <div class="brain-meter-fill" id="brainlessFill"></div>
+              </div>
+              <p class="meter-copy" id="brainlessVerdict"></p>
+            </div>
+
+            <div class="result-copy">
+              <h3>人格判词</h3>
+              <p id="resultVerdict"></p>
+              <blockquote id="resultQuote"></blockquote>
+            </div>
+
+            <div class="action-row">
+              <button class="action-button primary" id="restartButton">再测一次</button>
+              <button class="action-button secondary" id="copyButton">复制结果</button>
+            </div>
+          </article>
+
+          <article class="result-card side-card">
+            <h3>高维度读数</h3>
+            <div class="dimension-list" id="dimensionList"></div>
+          </article>
+
+          <article class="result-card side-card">
+            <h3>适配短剧赛道</h3>
+            <div class="tag-cloud" id="genreTags"></div>
+            <h3 class="subhead">高频角色位</h3>
+            <div class="tag-cloud" id="roleTags"></div>
+          </article>
+
+          <article class="result-card side-card" id="hiddenCard">
+            <h3>隐藏诊断</h3>
+            <div class="hidden-list" id="hiddenList"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>ZZTI / 智障钛</p>
+      <p>静态题库站点 · 500 题 · 公开可部署</p>
+    </footer>
+  </body>
+</html>
