@@ -836,6 +836,27 @@ body {
   text-transform: uppercase;
 }
 
+.dimension-item-meta {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.dimension-item-meta span {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8c1f16;
+}
+
+.dimension-item-meta em {
+  font-style: normal;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
 .dimension-track {
   height: 14px;
   border: 3px solid var(--ink);
