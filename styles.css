@@ -304,6 +304,15 @@ body {
   color: var(--ink);
 }
 
+.bridge-note {
+  margin: 1rem 0 0;
+  padding: 0.8rem 1rem;
+  border: 3px dashed var(--ink);
+  background: rgba(255, 216, 77, 0.22);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
 .hero-side {
   display: grid;
   gap: 1rem;
