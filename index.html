@@ -89,6 +89,9 @@
           </article>
 
           <div class="options-grid" id="optionsContainer"></div>
+          <div class="quiz-actions">
+            <button class="action-button secondary quiz-nav-button" id="prevQuestionButton" type="button">上一题</button>
+          </div>
         </div>
       </section>
 
@@ -103,16 +106,10 @@
           <article class="result-card main-result" id="resultCard">
             <div class="result-poster">
               <p class="poster-kicker">脑残事故单</p>
-              <div class="poster-layout">
-                <div class="poster-copy-wrap">
-                  <h3 class="poster-title" id="posterTitle">绿帽瘾君子</h3>
-                  <div class="poster-analysis" id="posterAnalysis"></div>
-                  <div class="poster-dimension-strip" id="posterDimensionStrip"></div>
-                </div>
-                <button class="poster-art-frame persona-figure-trigger" id="personaFigureButton" type="button">
-                  <img class="poster-art-image" id="personaFigureImage" src="./assets/deco-art.svg" alt="结果角色形象图" />
-                  <span class="persona-figure-hint" id="personaFigureHint">点击放大角色形象</span>
-                </button>
+              <div class="poster-copy-wrap">
+                <h3 class="poster-title" id="posterTitle">绿帽瘾君子</h3>
+                <div class="poster-analysis" id="posterAnalysis"></div>
+                <div class="poster-dimension-strip" id="posterDimensionStrip"></div>
               </div>
             </div>
 
@@ -128,7 +125,7 @@
             </div>
 
             <div class="result-copy">
-              <h3>人格判词</h3>
+              <h3>人设判词</h3>
               <p id="resultVerdict"></p>
               <blockquote id="resultQuote"></blockquote>
             </div>
@@ -141,8 +138,16 @@
             <p class="bridge-note" id="bridgeNote">网页测完后，把结果图口令贴回飞书里的 OpenClaw，就能调 Wan2.7 生海报。</p>
           </article>
 
-          <article class="result-card side-card">
-            <h3>高危指数清单</h3>
+          <article class="result-card side-card figure-card">
+            <h3>角色形象档案</h3>
+            <button class="poster-art-frame persona-figure-trigger" id="personaFigureButton" type="button">
+              <img class="poster-art-image" id="personaFigureImage" src="./assets/deco-art.svg" alt="结果角色形象图" />
+              <span class="persona-figure-hint" id="personaFigureHint">点击放大角色形象</span>
+            </button>
+          </article>
+
+          <article class="result-card side-card metric-card">
+            <h3>脑回路偏科记录</h3>
             <div class="dimension-list" id="dimensionList"></div>
           </article>
 

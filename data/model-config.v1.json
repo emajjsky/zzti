@@ -148,7 +148,12 @@
       "secondary": [
         "外挂吞钩"
       ],
-      "asset": "./assets/personas/green-hat-junkie.png"
+      "asset": "./assets/personas/green-hat-junkie.png",
+      "result_intro": "你在短剧里最适合做那种被越界贴脸了还要先劝自己冷静的苦主角色，专门负责替狗血关系续命。",
+      "result_scene": "别人半夜陪白月光喝到天亮，你第一反应不是翻脸，而是再听一版解释，看能不能把这段关系硬缝回去。",
+      "result_flip": "你最爱输在边界感。事情明明已经踩线，你还想给苦衷、旧情和体面各留一个台阶，最后只剩自己在台下流血。",
+      "result_comment": "弹幕会骂你不是深情，是把羞辱当长期订阅。",
+      "result_ending": "要么被剪成全网血压包，要么拖到大结局前一集才学会翻脸。"
     },
     "白月光特赦令": {
       "display_name": "白月光特赦令",
@@ -193,7 +198,12 @@
         "献祭填坑",
         "外挂吞钩"
       ],
-      "asset": "./assets/personas/moonlight-amnesty.png"
+      "asset": "./assets/personas/moonlight-amnesty.png",
+      "result_intro": "你像那种对白月光有永久减刑权的主角，只要旧爱一回头，你整套判断系统就会自动掉线。",
+      "result_scene": "对方犯了同样的错，别人你当场审判，旧爱你先替她补背景、编苦衷、找理由，连观众都替你累。",
+      "result_flip": "你最容易把偏爱包装成大度。明明该追责的时刻，你偏要把旧情抬上来压事实。",
+      "result_comment": "弹幕会说你不是有滤镜，你是给白月光发了免罪金牌。",
+      "result_ending": "通常会在对方连续捅你几刀之后，才姗姗来迟地想起自己也该醒了。"
     },
     "扶弟填坑机": {
       "display_name": "扶弟填坑机",
@@ -231,7 +241,12 @@
         "跪舔换边",
         "外挂吞钩"
       ],
-      "asset": "./assets/personas/sibling-pit-filler.png"
+      "asset": "./assets/personas/sibling-pit-filler.png",
+      "result_intro": "你像那种全家谁出事都默认该你补位的冤种血包，戏里最稳定的功能就是替别人扛雷。",
+      "result_scene": "弟弟闯祸、养子顶罪、小舅子伸手，别人哭一轮劝一轮，你就开始盘算自己还能再拆哪块资源出去补洞。",
+      "result_flip": "你最容易输在责任错位。明明不是你的锅，你总能被亲情和道德感拖进去，最后连自己的日子都赔进去。",
+      "result_comment": "弹幕会骂你不是顾家，你是把自己活成了全家共享钱包。",
+      "result_ending": "往往撑到所有人都把你当理所应当，才突然发现自己的人生早被拆空了。"
     },
     "炒茶大师": {
       "display_name": "炒茶大师",
@@ -269,7 +284,12 @@
         "门槛压人",
         "做局清算"
       ],
-      "asset": "./assets/personas/tea-stir-master.png"
+      "asset": "./assets/personas/tea-stir-master.png",
+      "result_intro": "你在剧里最像专门往人堆里递话、递眼神、递录音的拱火位，真正的手艺不是吵架，是把局炒苦。",
+      "result_scene": "别人刚有点摩擦，你已经想好把哪句原话转给谁最炸，最好谁都觉得不是你开的火。",
+      "result_flip": "你最爱输在手痒。很多局本来还能收，你偏要往里补半句，让所有人都下不来台。",
+      "result_comment": "弹幕会说你不是吃瓜，你是亲自下锅翻炒。",
+      "result_ending": "前半段当茶艺导演，后半段常因为递刀太多，自己也被卷进火场。"
     },
     "台词暴发户": {
       "display_name": "台词暴发户",
@@ -307,7 +327,12 @@
         "爆冲翻脸",
         "掉马妄想"
       ],
-      "asset": "./assets/personas/line-tycoon.png"
+      "asset": "./assets/personas/line-tycoon.png",
+      "result_intro": "你像那种底牌还没翻，狠话先铺满全场的装场型主角，最强战力永远是嘴上的预告片。",
+      "result_scene": "局面刚开个口子，你已经想把“三分钟内”“全家低头”“市值翻十倍”这套词条一次性喊完。",
+      "result_flip": "你最容易翻车在前摇过长。气势先把自己吹成大结局，真到落地时却还要边演边补逻辑。",
+      "result_comment": "弹幕会说你不是龙王，你是台词先行版 PPT 战神。",
+      "result_ending": "通常能靠气势活几集，但一旦现实不配合，打脸声会比你台词还响。"
     },
     "爆冲煤气罐": {
       "display_name": "爆冲煤气罐",
@@ -344,7 +369,12 @@
       "secondary": [
         "台词膨胀"
       ],
-      "asset": "./assets/personas/blast-tank.png"
+      "asset": "./assets/personas/blast-tank.png",
+      "result_intro": "你是那种一点就炸的掀桌角色，最擅长的不是谈判，而是把冲突直接拉到爆破模式。",
+      "result_scene": "别人还在衡量后果，你已经准备把桌子、关系、会场和旁边拦你的人一起掀出去。",
+      "result_flip": "你最容易死在情绪快过后手。该留的证没留，该控的场没控，先爽一秒，后面全是赔偿单。",
+      "result_comment": "弹幕会说你不是有血性，你是移动式情绪爆破桶。",
+      "result_ending": "高光来得快，翻车也快，通常不是被人算死，就是把自己先炸空。"
     },
     "帮腔扩音器": {
       "display_name": "帮腔扩音器",
@@ -382,7 +412,12 @@
         "跪舔换边",
         "炒茶拱火"
       ],
-      "asset": "./assets/personas/echo-loudspeaker.png"
+      "asset": "./assets/personas/echo-loudspeaker.png",
+      "result_intro": "你像群像戏里最稳定的口径复制机，别人先喊一句，你负责把音量放大三倍。",
+      "result_scene": "老板、长辈、权臣刚开口定性，你还没核事实，就已经开始考虑怎么把那套话说得更完整。",
+      "result_flip": "你最容易输在判断外包。谁声音大你就替谁补刀，等风向反转时，自己也成了旧口径的陪葬品。",
+      "result_comment": "弹幕会说你不是在说话，你是在做人形扩音喇叭。",
+      "result_ending": "前期靠跟风保平安，后期最容易因为跟错边被一起清算。"
     },
     "跪舔变色龙": {
       "display_name": "跪舔变色龙",
@@ -420,7 +455,12 @@
         "站队复读",
         "门槛压人"
       ],
-      "asset": "./assets/personas/kneel-chameleon.png"
+      "asset": "./assets/personas/kneel-chameleon.png",
+      "result_intro": "你像那种见强就贴、见弱就躲的变色投诚位，最灵敏的感官不是良心，是风向。",
+      "result_scene": "谁脸色一沉、谁势头一涨，你就开始挪位置、改称呼、调口风，恨不得让所有人都看见你已经站对边了。",
+      "result_flip": "你最容易翻车在转向太快。你以为是在自保，别人看见的却是立场廉价、转头就卖。",
+      "result_comment": "弹幕会说你不是识时务，你是风往哪吹就往哪倒的塑料人。",
+      "result_ending": "短期常能苟住，长期几乎没人真信你，旧主新主都防着你。"
     },
     "验资扫描仪": {
       "display_name": "验资扫描仪",
@@ -457,7 +497,12 @@
       "secondary": [
         "炒茶拱火"
       ],
-      "asset": "./assets/personas/class-scanner.png"
+      "asset": "./assets/personas/class-scanner.png",
+      "result_intro": "你像那种凡事先看房车、门第、履历和血统的势利定级器，最爱干的事是给人分层上桌。",
+      "result_scene": "人还没开口，你已经先扫完对方背景，顺手决定这人配不配被你认真对待。",
+      "result_flip": "你最容易输在把现实嗅觉用成了羞辱工具。条件一高就捧，条件一低就压，久了连体面都变得刻薄。",
+      "result_comment": "弹幕会说你不是挑条件，你是把门第当安检门。",
+      "result_ending": "前期看着像掌规矩的人，后期很容易被剪成又坏又势利的压人反派。"
     },
     "录音活阎王": {
       "display_name": "录音活阎王",
@@ -494,7 +539,12 @@
       "secondary": [
         "炒茶拱火"
       ],
-      "asset": "./assets/personas/recording-reaper.png"
+      "asset": "./assets/personas/recording-reaper.png",
+      "result_intro": "你像那种不急着吵，只急着把证据、人证和时间点都凑齐的狠角色，属于越安静越危险的类型。",
+      "result_scene": "别人忙着在现场抢赢一口气，你已经在想等谁到场、什么时候放录音、怎么把对方一锅端。",
+      "result_flip": "你不太容易死在莽，但可能死在下手太狠。你一旦决定收网，通常不会只拿回公道，还会把场面一起剪成对方的公开处刑。",
+      "result_comment": "弹幕会说你不是记仇，你是自带归档功能的活证据库。",
+      "result_ending": "大多能活到中后段，真正的高光往往是所有人都以为你忍了，其实你在等灯亮。"
     },
     "巴掌记账机": {
       "display_name": "巴掌记账机",
@@ -532,7 +582,12 @@
       "secondary": [
         "台词膨胀"
       ],
-      "asset": "./assets/personas/slap-ledger.png"
+      "asset": "./assets/personas/slap-ledger.png",
+      "result_intro": "你像那种一边忍一边记账，最后忍不住时想把旧账和巴掌一起结清的反杀型狠人。",
+      "result_scene": "你表面还能坐着听，心里已经开始按顺序给每个人编号，盘算谁先收利息、谁后算本金。",
+      "result_flip": "你最容易卡在忍与炸的交界处。前面太能攒，后面一爆就容易把火力开过头。",
+      "result_comment": "弹幕会说你不是记忆好，你是把耳光和账本订成了同一本册子。",
+      "result_ending": "演得好是爽文清算局，演不好就是仇报完了、场子也跟着炸没了。"
     },
     "掉马自来电": {
       "display_name": "掉马自来电",
@@ -570,7 +625,12 @@
         "台词膨胀",
         "外挂吞钩"
       ],
-      "asset": "./assets/personas/reveal-radio.png"
+      "asset": "./assets/personas/reveal-radio.png",
+      "result_intro": "你像那种一点委屈就自动给自己配身份回归 BGM 的主角，人生没有掉马就像没开机。",
+      "result_scene": "随便一块旧物、一句暗示、一次轻视，都足够让你脑内先播完“他们很快就会重新认人”的预告片。",
+      "result_flip": "你最容易输在把剧情感当证据。现实还没动，你的脑补已经先冲到大结局了。",
+      "result_comment": "弹幕会说你不是等翻盘，你是在等片头字幕写出自己真名。",
+      "result_ending": "如果真有身份线，你会很爽；如果没有，你就会被活活剪成自我感动型笑柄。"
     },
     "认亲警报器": {
       "display_name": "认亲警报器",
@@ -615,7 +675,12 @@
       "secondary": [
         "站队复读"
       ],
-      "asset": "./assets/personas/kinship-alarm.png"
+      "asset": "./assets/personas/kinship-alarm.png",
+      "result_intro": "你像那种看到玉佩、胎记、旧照就自动翻族谱的认亲雷达，闻到血缘味比谁都快。",
+      "result_scene": "别人还在核线索，你已经先想好谁该叫爹、谁该叫哥、哪一桌人该集体后悔。",
+      "result_flip": "你最容易输在认亲脑补超速。半条线索就敢起飞，一旦认错人，尴尬和打脸都会成倍返还。",
+      "result_comment": "弹幕会说你不是侦探，你是逢人就想滴血认亲的族谱广播站。",
+      "result_ending": "真线索来了你会比谁都兴奋，假线索来了你也经常第一个冲出去丢人。"
     },
     "系统提线木偶": {
       "display_name": "系统提线木偶",
@@ -659,7 +724,12 @@
       "secondary": [
         "掉马妄想"
       ],
-      "asset": "./assets/personas/system-puppet.png"
+      "asset": "./assets/personas/system-puppet.png",
+      "result_intro": "你像那种只要提示框一响，就很愿意把脑子和主见一起交给系统托管的执行器角色。",
+      "result_scene": "别人还在判断这任务离不离谱，你已经开始盘回报、算奖励、准备照着弹窗做下一步。",
+      "result_flip": "你最容易死在判断外包。系统说能翻盘你就信，系统说再忍一轮你就忍，最后连自己为什么这么做都说不清。",
+      "result_comment": "弹幕会说你不是有外挂，你是被外挂牵着鼻子走。",
+      "result_ending": "有时候能靠任务走捷径，更多时候会被编剧写成把自己送进坑里的工具人。"
     },
     "萌宝遥控器": {
       "display_name": "萌宝遥控器",
@@ -701,7 +771,12 @@
         "献祭填坑",
         "掉马妄想"
       ],
-      "asset": "./assets/personas/baby-remote.png"
+      "asset": "./assets/personas/baby-remote.png",
+      "result_intro": "你像那种总指望神童幼崽替成年人处理烂摊子的萌宝依赖型角色，脑子里默认孩子能代打全场。",
+      "result_scene": "大人全在扯皮时，你已经开始幻想孩子抱着证据、户口本和监控录像冲进来一键翻盘。",
+      "result_flip": "你最容易输在把希望押给不该背锅的人。孩子越神，你越舍得把成年人的责任外包出去。",
+      "result_comment": "弹幕会说你不是信孩子，你是把萌宝当全能售后中心。",
+      "result_ending": "运气好能等来反杀神童，运气差就只能眼看着自己把现实活成幼崽连续剧。"
     },
     "狗血吞金兽": {
       "display_name": "狗血吞金兽",
@@ -740,7 +815,12 @@
         "旧情滤镜",
         "站队复读"
       ],
-      "asset": "./assets/personas/melodrama-beast.png"
+      "asset": "./assets/personas/melodrama-beast.png",
+      "result_intro": "你像那种专门靠狗血高密度投喂才能兴奋起来的观众型主角，越离谱你越觉得这才对味。",
+      "result_scene": "认亲、系统、萌宝、反杀、白月光、直播翻盘只要能同一天撞上，你就会觉得这局终于像样了。",
+      "result_flip": "你最容易输在把所有离谱都当套餐。越狗血越舍不得刹车，最后连最基本的逻辑都能一起吞下去。",
+      "result_comment": "弹幕会说你不是在活剧情，你是在把狗血当自助餐猛炫。",
+      "result_ending": "戏里通常特别热闹，但只要编剧一停喂，你的脑子立刻会因为现实不够疯而空虚。"
     }
   },
   "hidden_library": {

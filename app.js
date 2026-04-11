@@ -105,6 +105,7 @@ const dom = {
   brainMeter: document.getElementById("brainMeter"),
   questionStem: document.getElementById("questionStem"),
   optionsContainer: document.getElementById("optionsContainer"),
+  prevQuestionButton: document.getElementById("prevQuestionButton"),
   resultTitle: document.getElementById("resultTitle"),
   resultSubtitle: document.getElementById("resultSubtitle"),
   brainlessIndex: document.getElementById("brainlessIndex"),
@@ -315,20 +316,25 @@ function renderQuestion() {
   const question = state.paper.questions[state.currentIndex];
   const total = state.paper.questions.length;
   const progress = ((state.currentIndex + 1) / total) * 100;
+  const currentAnswer = state.answers[state.currentIndex];
 
   dom.questionCounter.textContent = `第 ${state.currentIndex + 1} / ${total} 题`;
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
   dom.questionStem.textContent = question.stem;
+  dom.prevQuestionButton.disabled = state.currentIndex === 0;
 
   dom.optionsContainer.innerHTML = "";
   question.options.forEach((option) => {
     const button = document.createElement("button");
     button.className = "option-card";
+    if (currentAnswer && currentAnswer.option.id === option.id) {
+      button.classList.add("is-selected");
+    }
     button.type = "button";
-    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-text">${option.text}</span>`;
+    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-stance">${option.stance || option.level || option.id}</span><span class="option-text">${option.text}</span>`;
     button.addEventListener("click", () => {
-      state.answers.push({ question, option });
+      state.answers[state.currentIndex] = { question, option };
       if (state.currentIndex === total - 1) {
         renderResult();
       } else {
@@ -637,128 +643,55 @@ function getDimensionScoreValue(dimensionRatings, dimensionName) {
   return dimensionRatings.find((item) => item.name === dimensionName)?.score ?? 50;
 }
 
+function getDimensionDisplayLabel(item) {
+  return item.label.replace("指数", "");
+}
+
+function getDimensionSalience(item) {
+  if (item.name === "做局清算") {
+    return Math.abs(item.score - 78);
+  }
+  return item.score;
+}
+
 function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings) {
-  const [first, second, third] = topDimensions;
-  const safe = (item, fallback) => (item ? `${item.label}${item.score}` : fallback);
-  const rankingScores = rankPersonas(Object.fromEntries(dimensionRatings.map((item) => [item.name, item.score])));
-  const runnerUp = rankingScores[1] ? PERSONA_LIBRARY[rankingScores[1].name] : null;
-  const highBackbone = dimensionRatings
-    .filter((item) => item.score >= 60)
-    .slice(0, 4)
-    .map((item) => item.label.replace("指数", ""))
-    .join("、");
-  const habitText = highBackbone || "离谱剧情惯性";
   const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
-  const rageScore = getDimensionScoreValue(dimensionRatings, "爆冲翻脸");
-  const fantasyScore = getDimensionScoreValue(dimensionRatings, "外挂吞钩");
-  const oldLoveScore = getDimensionScoreValue(dimensionRatings, "旧情滤镜");
-  const greenScore = getDimensionScoreValue(dimensionRatings, "绿帽耐受");
-  const sacrificeScore = getDimensionScoreValue(dimensionRatings, "献祭填坑");
-  const crowdScore = Math.round(
-    (
-      getDimensionScoreValue(dimensionRatings, "炒茶拱火") +
-      getDimensionScoreValue(dimensionRatings, "站队复读") +
-      getDimensionScoreValue(dimensionRatings, "跪舔换边") +
-      getDimensionScoreValue(dimensionRatings, "门槛压人")
-    ) / 4,
-  );
-  const relationshipScore = Math.round((oldLoveScore + greenScore + sacrificeScore) / 3);
-  const spectacleScore = Math.round(
-    (
-      getDimensionScoreValue(dimensionRatings, "台词膨胀") +
-      getDimensionScoreValue(dimensionRatings, "掉马妄想") +
-      fantasyScore
-    ) / 3,
-  );
-  const episodeEstimate = clamp(
-    18
-      - Math.round(brainlessIndex / 7)
-      + Math.round((controlScore - 50) / 12)
-      - Math.round((rageScore - 50) / 18)
-      - Math.round((spectacleScore - 50) / 18)
-      - Math.round((relationshipScore - 50) / 20),
-    2,
-    26,
-  );
-  let episodeOutcome = "属于还能苟到中后段、但迟早会因为自己的毛病把局面重新演炸的类型。";
-  if (episodeEstimate <= 4) {
-    episodeOutcome = "基本活不过前几集，不是被自己嘴快玩死，就是被人拿去做观众血压包。";
-  } else if (episodeEstimate <= 8) {
-    episodeOutcome = "大概能撑过开局，但很容易在第一波狗血高潮里把自己送走。";
-  } else if (episodeEstimate <= 14) {
-    episodeOutcome = "能混到中段，主要靠戏剧张力续命，不是靠你真的稳。";
-  } else if (episodeEstimate >= 20) {
-    episodeOutcome = "已经算比较能苟的了，前提是别在最关键的时候突然上头抢戏。";
+  const triggerNames = topDimensions
+    .filter((item) => item.name !== "做局清算")
+    .slice(0, 3)
+    .map(getDimensionDisplayLabel)
+    .join("、") || "狗血桥段";
+  let restraintText = "你给自己留后手这件事做得一般，一旦上头就容易把场面和退路一起烧掉。";
+  if (controlScore >= 75) {
+    restraintText = "你还有点后手意识，知道什么时候该录音、留证、卡节点，不至于每次都裸奔进修罗场。";
+  } else if (controlScore >= 55) {
+    restraintText = "你不是完全没刹车，但刹车通常来得偏晚，往往要等狗血已经滚起来才想起补后手。";
   }
-  const strongestTrait = first?.name ? DIMENSION_DIAGNOSTICS[first.name]?.high : "";
-  const secondTrait = second?.name ? DIMENSION_DIAGNOSTICS[second.name]?.high : "";
-  const preservedDimension = [...dimensionRatings]
-    .sort((left, right) => {
-      const leftGood = left.name === "做局清算" ? 100 - Math.abs(left.score - 85) : left.score;
-      const rightGood = right.name === "做局清算" ? 100 - Math.abs(right.score - 85) : right.score;
-      return rightGood - leftGood;
-    })
-    .find((item) => item.name === "做局清算" ? item.score >= 65 : item.score <= 35)
-    || [...dimensionRatings].sort((left, right) => left.score - right.score)[0];
-  const preservedText = preservedDimension
-    ? (preservedDimension.name === "做局清算"
-      ? DIMENSION_DIAGNOSTICS[preservedDimension.name]?.high
-      : DIMENSION_DIAGNOSTICS[preservedDimension.name]?.low)
-    : "你也不是完全没刹车，只是刹车常常来得太晚。";
-
-  let patternText = "你最致命的毛病，是明明已经看见离谱苗头，还总想替剧情再续半口气。";
-  if (relationshipScore >= crowdScore && relationshipScore >= spectacleScore) {
-    patternText = "你在关系局里最容易失手。只要旧情、越界和情感绑架一起出现，你就会本能地替别人找苦衷，把该翻脸的时刻硬拖成继续消耗自己的长线苦情戏。";
-  } else if (crowdScore >= relationshipScore && crowdScore >= spectacleScore) {
-    patternText = "你在群像局里最容易上头。风向一变、强弱一分、场面一热，你就会忍不住跟着补口径、换位置、替更吵的那边把刀递完整。";
-  } else {
-    patternText = "你对爽文刺激的耐受已经很低了。狠话、掉马、认亲、外挂这些词一冒头，你就容易先被脑内配乐劫持，再把现实判断外包给戏剧高潮。";
-  }
-
-  let triggerText = `平时看起来像还能讲理，真进冲突现场，你的判断力就会优先押给 ${habitText}。`;
-  if (controlScore >= 72) {
-    triggerText = `好在你的做局清算指数还有 ${controlScore}，说明你不是纯莽，你知道什么时候该留证、什么时候该等对方再多露半张底牌。只是只要被踩中 ${habitText} 这些点，耐心就会开始松。`;
-  } else if (rageScore >= 70) {
-    triggerText = `你现在最危险的短板，是爆冲翻脸 ${rageScore} 配上做局清算 ${controlScore}。这意味着你经常还没把证据攒齐，就已经先想把桌子、关系和场面一起炸穿，爽是爽了，后手也跟着烧没。`;
-  } else {
-    triggerText = `你这套反应不是单点失控，而是慢慢被拖进戏里。先是把边界让掉一点，再替离谱解释一点，等真的想反击时，局势往往已经被别人带到他们更擅长的频道里。`;
-  }
-
-  let finaleText = `脑残指数 ${brainlessIndex} 不只是一个乐子分，它说明你已经具备把普通矛盾活活演成连载狗血长篇的稳定天赋。扔进 ${personaMeta.genres[0]} 赛道，你基本会被剪成 ${personaMeta.roles[0]} 位：前半段替剧情续命，后半段再替自己的上头买单。`;
-  if (spectacleScore >= 72) {
-    finaleText = `脑残指数 ${brainlessIndex} 说明你已经很适合被扔进 ${personaMeta.genres[0]} 赛道做高浓度燃料了。编剧只要给你配一通电话、一块玉佩或者一句“其实你身份不简单”，你就能立刻从普通人切到 ${personaMeta.roles[0]} 模式，开始给自己脑补整季反杀分镜。`;
-  } else if (relationshipScore >= 72) {
-    finaleText = `脑残指数 ${brainlessIndex} 说明你特别适合被编剧拿去做苦主型角色耗材。放进 ${personaMeta.genres[0]} 里，你大概率会被剪成 ${personaMeta.roles[0]}：委屈吞得比谁都整齐，醒悟永远晚半拍，专门负责把观众血压托上去。`;
-  }
-
   return [
     {
-      title: "人格特点",
-      text: `你最像 ${personaMeta.display_name}，不是因为某一题选得离谱，而是 ${safe(first, "旧情滤镜")}、${safe(second, "爆冲翻脸")}、${safe(third, "外挂吞钩")} 这几根线在你身上拧得特别紧。${strongestTrait}${secondTrait ? `再加上 ${secondTrait}` : ""}`,
+      title: "你在剧里",
+      text: personaMeta.result_intro || personaMeta.verdict,
     },
     {
-      title: "核心缺陷",
-      text: `${patternText}${triggerText}说白了，你的问题不是不知道什么叫离谱，而是每次都比该抽身的时间晚半拍，最后硬把普通矛盾养成连续剧。`,
+      title: "常演戏码",
+      text: `${personaMeta.result_scene || personaMeta.tagline}最容易把你点着的桥段就是 ${triggerNames} 这一挂，编剧只要把这些元素往你面前一摆，你就很难不自己加戏。`,
     },
     {
-      title: "还剩点啥",
-      text: `${preservedText}这点东西让你不至于完全塌成纸片人，但也只够偶尔自救，远远不够把整套脑回路从狗血里拔出来。`,
+      title: "翻车方式",
+      text: `${personaMeta.result_flip || personaMeta.verdict}${restraintText}`,
     },
     {
-      title: "能活几集",
-      text: `按你这套脑回路，扔进 ${personaMeta.genres[0]} 赛道里大概能活 ${episodeEstimate} 集。${episodeOutcome}${finaleText}${runnerUp ? `如果不是这条线压得最狠，你本来还可能往 ${runnerUp.display_name} 那边滑。` : ""}`,
+      title: "弹幕锐评",
+      text: `${personaMeta.result_comment || personaMeta.quote}${personaMeta.result_ending ? ` ${personaMeta.result_ending}` : ""}`,
     },
   ];
 }
 
 function buildVerdictSummary(personaMeta, topDimensions, dimensionRatings) {
-  const strongest = topDimensions[0];
-  const strongestText = strongest?.name ? DIMENSION_DIAGNOSTICS[strongest.name]?.high : "";
   const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
-  const controlText = controlScore >= 65
-    ? "好消息是你还知道留点后手，不算彻底裸奔。"
-    : "坏消息是你连给自己留后手这件事都做得一般。";
-  return `${personaMeta.verdict}${strongestText ? strongestText : ""}${controlText}`;
+  const topLabel = topDimensions[0] ? getDimensionDisplayLabel(topDimensions[0]) : "狗血触发器";
+  const controlText = controlScore >= 70 ? "好在你偶尔还知道留证，不算纯送。" : "坏消息是你多数时候连后手都懒得给自己留。";
+  return `${personaMeta.verdict}你最容易被 ${topLabel} 这类桥段点燃。${controlText}`;
 }
 
 function renderPosterDimensionStrip(topDimensions) {
@@ -766,7 +699,7 @@ function renderPosterDimensionStrip(topDimensions) {
   topDimensions.forEach((item) => {
     const chip = document.createElement("span");
     chip.className = "poster-dimension-chip";
-    chip.textContent = `${item.label}${item.score}`;
+    chip.textContent = `${getDimensionDisplayLabel(item)} · ${item.level}`;
     dom.posterDimensionStrip.appendChild(chip);
   });
 }
@@ -797,7 +730,10 @@ function buildPosterCommand(resultToken) {
 
 function renderDimensionList(dimensionRatings) {
   dom.dimensionList.innerHTML = "";
-  dimensionRatings.forEach((itemData) => {
+  [...dimensionRatings]
+    .sort((left, right) => getDimensionSalience(right) - getDimensionSalience(left))
+    .slice(0, 6)
+    .forEach((itemData) => {
     const value = itemData.score;
     const item = document.createElement("div");
     item.className = "dimension-item";
@@ -815,7 +751,7 @@ function renderDimensionList(dimensionRatings) {
       </div>
     `;
     dom.dimensionList.appendChild(item);
-  });
+    });
 }
 
 function renderTags(container, values, variant) {
@@ -838,7 +774,7 @@ function buildShareText(personaName, personaMeta, brainlessIndex, topDimensions)
     `脑残指数：${brainlessIndex}`,
     `适配赛道：${personaMeta.genres.join(" / ")}`,
     `高频角色位：${personaMeta.roles.join(" / ")}`,
-    `主导指数：${topDimensions.map((item) => `${item.label}${item.score}(${item.level})`).join(" / ")}`,
+    `脑回路偏科：${topDimensions.map((item) => `${getDimensionDisplayLabel(item)}(${item.level})`).join(" / ")}`,
     "诊断结论：脑子已经被短剧腌透了",
   ].join("\n");
 }
@@ -858,10 +794,10 @@ function renderResult() {
   const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
   const posterCommand = buildPosterCommand(resultToken);
   const personaAsset = personaMeta.asset || "./assets/deco-art.svg";
-  const personaCaption = `${personaName} · ${personaMeta.quote}`;
+  const personaCaption = `${personaName} · ${personaMeta.result_comment || personaMeta.quote}`;
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
-  dom.resultSubtitle.textContent = `很不幸，${personaMeta.tagline}`;
+  dom.resultSubtitle.textContent = personaMeta.result_intro || `很不幸，${personaMeta.tagline}`;
   dom.posterTitle.textContent = personaName;
   dom.posterAnalysis.innerHTML = detailedAnalysis
     .map(
@@ -878,7 +814,7 @@ function renderResult() {
   dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = buildVerdictSummary(personaMeta, topDimensions, dimensionRatings);
-  dom.resultQuote.textContent = personaMeta.quote;
+  dom.resultQuote.textContent = `弹幕：${personaMeta.result_comment || personaMeta.quote}`;
   dom.bridgeNote.textContent = "网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。";
   dom.personaFigureImage.src = personaAsset;
   dom.personaFigureImage.alt = `${personaName} 角色形象图`;
@@ -995,6 +931,14 @@ function bindEvents() {
 
   dom.restartButton.addEventListener("click", () => {
     startTest();
+  });
+
+  dom.prevQuestionButton.addEventListener("click", () => {
+    if (state.currentIndex === 0) {
+      return;
+    }
+    state.currentIndex -= 1;
+    renderQuestion();
   });
 
   dom.lightboxBackdrop.addEventListener("click", hideLightbox);
