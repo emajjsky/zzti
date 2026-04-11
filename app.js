@@ -204,6 +204,8 @@ const HIDDEN_LIBRARY = {
   },
 };
 
+const RESULT_TOKEN_PREFIX = "ZZTI_PAYLOAD::";
+
 const state = {
   bank: null,
   paper: null,
@@ -245,6 +247,8 @@ const dom = {
   posterStory: document.getElementById("posterStory"),
   restartButton: document.getElementById("restartButton"),
   copyButton: document.getElementById("copyButton"),
+  posterButton: document.getElementById("posterButton"),
+  bridgeNote: document.getElementById("bridgeNote"),
 };
 
 function shuffle(array) {
@@ -618,6 +622,37 @@ function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲玉佩都会自动坐直的程度。`;
 }
 
+function getHiddenHits(hiddenScores, threshold = 70) {
+  return Object.entries(hiddenScores)
+    .sort((left, right) => right[1] - left[1])
+    .filter(([, score]) => score >= threshold)
+    .map(([name, score]) => ({ name, score }));
+}
+
+function encodeBase64Url(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits) {
+  return {
+    v: "v1",
+    p: personaName,
+    b: brainlessIndex,
+    l: verdictLabel,
+    d: topDimensions.map((item) => [item.dimension, item.score]),
+    h: hiddenHits.map((item) => [item.name, item.score]),
+  };
+}
+
+function buildPosterCommand(resultToken) {
+  return `给 zzti 生结果图：${resultToken}`;
+}
+
 function renderDimensionList(dimensionScores) {
   dom.dimensionList.innerHTML = "";
   DIMENSION_ORDER.forEach((dimension) => {
@@ -661,12 +696,17 @@ function buildShareText(personaName, personaMeta, brainlessIndex) {
 
 function renderResult() {
   const dimensionScores = calculateDimensionScores();
+  const hiddenScores = calculateHiddenScores();
   const brainlessIndex = calculateBrainlessIndex(dimensionScores);
   const personaName = pickPersona(dimensionScores);
   const personaMeta = PERSONA_LIBRARY[personaName];
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
+  const hiddenHits = getHiddenHits(hiddenScores);
   const sampleCode = buildSampleCode(personaName, brainlessIndex);
+  const resultTokenPayload = buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits);
+  const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
+  const posterCommand = buildPosterCommand(resultToken);
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
   dom.resultSubtitle.textContent = `很不幸，${personaMeta.tagline}`;
@@ -681,6 +721,7 @@ function renderResult() {
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = `${personaMeta.verdict} 说白了，你不是没见过离谱，是你已经开始替离谱辩护了。`;
   dom.resultQuote.textContent = personaMeta.quote;
+  dom.bridgeNote.textContent = `网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。结果编号：${sampleCode}`;
 
   renderDimensionList(dimensionScores);
   renderTags(dom.genreTags, personaMeta.genres);
@@ -699,6 +740,21 @@ function renderResult() {
       window.setTimeout(() => {
         dom.copyButton.textContent = "复制结果";
       }, 1200);
+    }
+  };
+
+  dom.posterButton.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(posterCommand);
+      dom.posterButton.textContent = "口令已复制";
+      window.setTimeout(() => {
+        dom.posterButton.textContent = "生成结果图口令";
+      }, 1400);
+    } catch (error) {
+      dom.posterButton.textContent = "复制失败";
+      window.setTimeout(() => {
+        dom.posterButton.textContent = "生成结果图口令";
+      }, 1400);
     }
   };
 
