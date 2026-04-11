@@ -14,6 +14,63 @@ let DIMENSION_METADATA = [];
 let DIMENSION_META_MAP = {};
 let BRAINLESS_WEIGHTS = {};
 let PERSONA_LIBRARY = {};
+const OPTION_LABELS = ["A", "B", "C", "D"];
+const PERSONA_CLUSTERS = {
+  relationship: ["旧情滤镜", "绿帽耐受", "献祭填坑"],
+  crowd: ["炒茶拱火", "站队复读", "跪舔换边", "门槛压人"],
+  spectacle: ["台词膨胀", "掉马妄想", "外挂吞钩"],
+  retaliation: ["爆冲翻脸", "做局清算"],
+};
+const DIMENSION_DIAGNOSTICS = {
+  "旧情滤镜": {
+    high: "你对旧关系的情绪记忆太长，别人只要抛一个苦衷，你就容易把旧账重新当未完待续。",
+    low: "好在你对旧情这块还没完全失守，至少不是别人一回头你就自动替人减刑。",
+  },
+  "绿帽耐受": {
+    high: "边界一被踩，你第一反应不是翻脸，而是替这段关系找补丁，耐受高得有点离谱。",
+    low: "你对越界行为还有基本警觉，不至于别人把暧昧贴到脸上你都继续装看不见。",
+  },
+  "献祭填坑": {
+    high: "你太容易把别人的烂摊子背成自己的责任，谁会哭、谁会闹、谁会拿亲情压你，谁就更容易从你身上拆资源。",
+    low: "你在填坑这件事上还算有点刹车，不至于谁一卖惨你就连前途都往外掏。",
+  },
+  "炒茶拱火": {
+    high: "你很懂一句话该怎么递、递给谁最炸，很多局不是你开的，但你特别会往火里补风。",
+    low: "你至少不是那种见缝就递刀的人，很多热闹你看得出，却未必急着亲手点着。",
+  },
+  "台词膨胀": {
+    high: "牌还没翻，狠话先落地，这种先把气势做满的冲动在你身上很重。",
+    low: "你嘴上还算克制，不至于实力没到就先靠台词把自己吹成大结局。",
+  },
+  "爆冲翻脸": {
+    high: "你被踩到点时起爆很快，情绪上头后第一反应就是把桌子、关系和场子一起掀了。",
+    low: "你至少没到见火就炸的程度，很多场合还知道先压一下，不让自己立刻变现场火药桶。",
+  },
+  "站队复读": {
+    high: "场上一旦有主流口径，你很容易接着复读，顺手把别人的偏见喊成自己的立场。",
+    low: "你在跟风这块还留着点判断，不至于谁声音大你就自动替谁扩音。",
+  },
+  "跪舔换边": {
+    high: "你对风向的反应太快了，谁势大就往谁那边挪，保命和讨好常常压过原则。",
+    low: "你对强弱风向至少还有点抵抗力，不会一看到大人物脸色就立刻原地变色。",
+  },
+  "门槛压人": {
+    high: "你看人很容易先看身价、背景和能不能撑门面，现实嗅觉强，但也容易刻薄和势利。",
+    low: "你至少没把门第当成唯一准绳，还保留一点先看人再看包装的能力。",
+  },
+  "做局清算": {
+    high: "你不是不会忍，而是懂得留证、记账、攒局，很多人刚开口时你已经在算收网时间。",
+    low: "你在后手这块偏弱，容易气还没消就先把牌掀了，结果爽完才想起证据链没补齐。",
+  },
+  "掉马妄想": {
+    high: "只要剧情给你一点身份暗示，你脑子里的掉马 BGM 就会自动响，翻盘分镜比证据跑得还快。",
+    low: "你对掉马这套还算冷静，不至于半句暗示就先给自己脑补出全员跪地认错。",
+  },
+  "外挂吞钩": {
+    high: "系统、萌宝、认亲、神迹这些钩子对你太有效了，越离谱的桥段，你越容易先吞一半。",
+    low: "你对外挂味道还有点免疫，至少不会什么都往天命和奇迹上靠。",
+  },
+};
 
 const state = {
   bank: null,
@@ -21,6 +78,7 @@ const state = {
   paper: null,
   currentIndex: 0,
   answers: [],
+  paperSeed: null,
 };
 
 const dom = {
@@ -62,18 +120,122 @@ const dom = {
   lightboxCaption: document.getElementById("lightboxCaption"),
 };
 
-function chooseCore(coreQuestions, count) {
-  return coreQuestions
-    .slice()
-    .sort((left, right) => (left.order || 0) - (right.order || 0))
-    .slice(0, count);
+function hashString(text) {
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
-function buildPaper(profile = "standard") {
+function mulberry32(seed) {
+  let value = seed >>> 0;
+  return () => {
+    value += 0x6d2b79f5;
+    let next = Math.imul(value ^ (value >>> 15), 1 | value);
+    next ^= next + Math.imul(next ^ (next >>> 7), 61 | next);
+    return ((next ^ (next >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function cloneQuestion(question) {
+  return {
+    ...question,
+    options: question.options.map((option) => ({ ...option })),
+  };
+}
+
+function shuffleOptions(question, seed) {
+  const options = question.options.map((option) => ({
+    ...option,
+    original_id: option.original_id || option.id,
+  }));
+  const rng = mulberry32(hashString(`${seed}:${question.id}:options`));
+  for (let index = options.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [options[index], options[swapIndex]] = [options[swapIndex], options[index]];
+  }
+  return options.map((option, index) => ({
+    ...option,
+    id: OPTION_LABELS[index],
+  }));
+}
+
+function chooseCore(coreQuestions, count, seed) {
+  const ordered = coreQuestions
+    .slice()
+    .sort((left, right) => (left.order || 0) - (right.order || 0))
+    .map(cloneQuestion);
+
+  const remaining = ordered.slice();
+  const picked = [];
+
+  while (remaining.length) {
+    const last = picked[picked.length - 1];
+    const beforeLast = picked[picked.length - 2];
+
+    let winnerIndex = 0;
+    let winnerScore = Infinity;
+
+    remaining.forEach((question, index) => {
+      let score = 0;
+
+      if (last) {
+        if (question.metric_name === last.metric_name) {
+          score += 100;
+        }
+        if (question.genre === last.genre) {
+          score += 24;
+        }
+        if (question.scene_cluster === last.scene_cluster) {
+          score += 12;
+        }
+      }
+
+      if (beforeLast) {
+        if (question.metric_name === beforeLast.metric_name) {
+          score += 18;
+        }
+        if (question.genre === beforeLast.genre) {
+          score += 8;
+        }
+      }
+
+      const metricRemaining = remaining.filter((item) => item.metric_name === question.metric_name).length;
+      score -= metricRemaining * 4;
+      score += hashString(`${seed}:${question.id}:order`) / 4294967296;
+
+      if (score < winnerScore) {
+        winnerScore = score;
+        winnerIndex = index;
+      }
+    });
+
+    const pickedQuestion = remaining.splice(winnerIndex, 1)[0];
+    pickedQuestion.options = shuffleOptions(pickedQuestion, seed);
+    pickedQuestion.paper_order = picked.length + 1;
+    picked.push(pickedQuestion);
+  }
+
+  return picked.slice(0, count);
+}
+
+function createPaperSeed() {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return buffer[0];
+  }
+  return Math.floor(Math.random() * 0xffffffff);
+}
+
+function buildPaper(profile = "standard", seed = createPaperSeed()) {
   const coreQuestions = state.bank.core_questions || [];
-  const selectedCore = chooseCore(coreQuestions, coreQuestions.length);
+  const selectedCore = chooseCore(coreQuestions, coreQuestions.length, seed);
   return {
     profile,
+    seed,
     questions: selectedCore,
   };
 }
@@ -120,7 +282,8 @@ function hideLightbox() {
 }
 
 function startTest() {
-  state.paper = buildPaper(ACTIVE_PROFILE);
+  state.paperSeed = createPaperSeed();
+  state.paper = buildPaper(ACTIVE_PROFILE, state.paperSeed);
   state.answers = [];
   state.currentIndex = 0;
   showSection("quiz");
@@ -208,7 +371,35 @@ function calculateBrainlessIndex(dimensionScores) {
   return Math.round(weightedSum / totalWeight);
 }
 
-function personaAffinity(meta, dimensionScores) {
+function averageDimensionScore(source, dimensions, fallback = 50) {
+  const values = dimensions
+    .map((dimension) => source[dimension])
+    .filter((value) => typeof value === "number");
+  if (!values.length) {
+    return fallback;
+  }
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+}
+
+function buildClusterScores(source) {
+  return Object.fromEntries(
+    Object.entries(PERSONA_CLUSTERS).map(([cluster, dimensions]) => [
+      cluster,
+      averageDimensionScore(source, dimensions),
+    ]),
+  );
+}
+
+function buildDimensionRankMap(dimensionScores) {
+  return Object.fromEntries(
+    Object.entries(dimensionScores)
+      .sort((left, right) => right[1] - left[1])
+      .map(([dimension], index) => [dimension, index + 1]),
+  );
+}
+
+function personaAffinity(meta, dimensionScores, context) {
+  const { rankMap, clusterScores, topDimensionNames } = context;
   return DIMENSION_ORDER.reduce((sum, dimension) => {
     const target = meta.targets[dimension] ?? 50;
     let importance = 0.55;
@@ -238,7 +429,51 @@ function personaAffinity(meta, dimensionScores) {
     }
 
     return score;
-  }, 0);
+  }, 0)
+    + (() => {
+      let score = 0;
+      const targetClusterScores = buildClusterScores(meta.targets || {});
+      Object.entries(targetClusterScores).forEach(([cluster, targetScore]) => {
+        const actualScore = clusterScores[cluster] ?? 50;
+        const diff = Math.abs(actualScore - targetScore);
+        const clusterWeight = cluster === "relationship" || cluster === "spectacle" ? 0.9 : 0.7;
+        score -= diff * clusterWeight;
+      });
+
+      (meta.primary || []).forEach((dimension) => {
+        const rank = rankMap[dimension] ?? DIMENSION_ORDER.length;
+        if (rank <= 3) {
+          score += (4 - rank) * 14;
+        } else if (rank <= 6) {
+          score += (7 - rank) * 5;
+        } else {
+          score -= (rank - 6) * 5.5;
+        }
+      });
+
+      (meta.secondary || []).forEach((dimension) => {
+        const rank = rankMap[dimension] ?? DIMENSION_ORDER.length;
+        if (rank <= 4) {
+          score += (5 - rank) * 5;
+        }
+      });
+
+      const dominantHitCount = topDimensionNames
+        .slice(0, 3)
+        .filter((dimension) => (meta.primary || []).includes(dimension)).length;
+      if (!dominantHitCount) {
+        score -= 26;
+      } else {
+        score += dominantHitCount * 8;
+      }
+
+      const offProfileDominants = topDimensionNames
+        .slice(0, 3)
+        .filter((dimension) => (meta.targets?.[dimension] ?? 50) <= 35);
+      score -= offProfileDominants.length * 10;
+
+      return score;
+    })();
 }
 
 function applyPersonaBounds(meta, dimensionScores, score) {
@@ -258,17 +493,32 @@ function applyPersonaBounds(meta, dimensionScores, score) {
   return nextScore;
 }
 
+function rankPersonas(dimensionScores) {
+  const rankMap = buildDimensionRankMap(dimensionScores);
+  const clusterScores = buildClusterScores(dimensionScores);
+  const topDimensionNames = Object.entries(dimensionScores)
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 4)
+    .map(([dimension]) => dimension);
+
+  return Object.entries(PERSONA_LIBRARY)
+    .map(([name, meta]) => ({
+      name,
+      score: applyPersonaBounds(
+        meta,
+        dimensionScores,
+        personaAffinity(meta, dimensionScores, {
+          rankMap,
+          clusterScores,
+          topDimensionNames,
+        }),
+      ),
+    }))
+    .sort((left, right) => right.score - left.score);
+}
+
 function pickPersona(dimensionScores) {
-  let winnerName = null;
-  let winnerScore = -Infinity;
-  Object.entries(PERSONA_LIBRARY).forEach(([name, meta]) => {
-    const score = applyPersonaBounds(meta, dimensionScores, personaAffinity(meta, dimensionScores));
-    if (score > winnerScore) {
-      winnerName = name;
-      winnerScore = score;
-    }
-  });
-  return winnerName;
+  return rankPersonas(dimensionScores)[0]?.name || null;
 }
 
 function getVerdictLabel(index) {
@@ -355,6 +605,8 @@ function getDimensionScoreValue(dimensionRatings, dimensionName) {
 function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings) {
   const [first, second, third] = topDimensions;
   const safe = (item, fallback) => (item ? `${item.label}${item.score}` : fallback);
+  const rankingScores = rankPersonas(Object.fromEntries(dimensionRatings.map((item) => [item.name, item.score])));
+  const runnerUp = rankingScores[1] ? PERSONA_LIBRARY[rankingScores[1].name] : null;
   const highBackbone = dimensionRatings
     .filter((item) => item.score >= 60)
     .slice(0, 4)
@@ -383,6 +635,41 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
       fantasyScore
     ) / 3,
   );
+  const episodeEstimate = clamp(
+    18
+      - Math.round(brainlessIndex / 7)
+      + Math.round((controlScore - 50) / 12)
+      - Math.round((rageScore - 50) / 18)
+      - Math.round((spectacleScore - 50) / 18)
+      - Math.round((relationshipScore - 50) / 20),
+    2,
+    26,
+  );
+  let episodeOutcome = "属于还能苟到中后段、但迟早会因为自己的毛病把局面重新演炸的类型。";
+  if (episodeEstimate <= 4) {
+    episodeOutcome = "基本活不过前几集，不是被自己嘴快玩死，就是被人拿去做观众血压包。";
+  } else if (episodeEstimate <= 8) {
+    episodeOutcome = "大概能撑过开局，但很容易在第一波狗血高潮里把自己送走。";
+  } else if (episodeEstimate <= 14) {
+    episodeOutcome = "能混到中段，主要靠戏剧张力续命，不是靠你真的稳。";
+  } else if (episodeEstimate >= 20) {
+    episodeOutcome = "已经算比较能苟的了，前提是别在最关键的时候突然上头抢戏。";
+  }
+  const strongestTrait = first?.name ? DIMENSION_DIAGNOSTICS[first.name]?.high : "";
+  const secondTrait = second?.name ? DIMENSION_DIAGNOSTICS[second.name]?.high : "";
+  const preservedDimension = [...dimensionRatings]
+    .sort((left, right) => {
+      const leftGood = left.name === "做局清算" ? 100 - Math.abs(left.score - 85) : left.score;
+      const rightGood = right.name === "做局清算" ? 100 - Math.abs(right.score - 85) : right.score;
+      return rightGood - leftGood;
+    })
+    .find((item) => item.name === "做局清算" ? item.score >= 65 : item.score <= 35)
+    || [...dimensionRatings].sort((left, right) => left.score - right.score)[0];
+  const preservedText = preservedDimension
+    ? (preservedDimension.name === "做局清算"
+      ? DIMENSION_DIAGNOSTICS[preservedDimension.name]?.high
+      : DIMENSION_DIAGNOSTICS[preservedDimension.name]?.low)
+    : "你也不是完全没刹车，只是刹车常常来得太晚。";
 
   let patternText = "你最致命的毛病，是明明已经看见离谱苗头，还总想替剧情再续半口气。";
   if (relationshipScore >= crowdScore && relationshipScore >= spectacleScore) {
@@ -410,10 +697,33 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
   }
 
   return [
-    { title: "核心病灶", text: `你这套脑回路不是某一根线断了，而是 ${safe(first, "旧情滤镜")}、${safe(second, "爆冲翻脸")}、${safe(third, "外挂吞钩")} 几根线同时拧死。${patternText}` },
-    { title: "发病现场", text: triggerText },
-    { title: "结局分镜", text: finaleText },
+    {
+      title: "人格特点",
+      text: `你最像 ${personaMeta.display_name}，不是因为某一题选得离谱，而是 ${safe(first, "旧情滤镜")}、${safe(second, "爆冲翻脸")}、${safe(third, "外挂吞钩")} 这几根线在你身上拧得特别紧。${strongestTrait}${secondTrait ? `再加上 ${secondTrait}` : ""}`,
+    },
+    {
+      title: "核心缺陷",
+      text: `${patternText}${triggerText}说白了，你的问题不是不知道什么叫离谱，而是每次都比该抽身的时间晚半拍，最后硬把普通矛盾养成连续剧。`,
+    },
+    {
+      title: "还剩点啥",
+      text: `${preservedText}这点东西让你不至于完全塌成纸片人，但也只够偶尔自救，远远不够把整套脑回路从狗血里拔出来。`,
+    },
+    {
+      title: "能活几集",
+      text: `按你这套脑回路，扔进 ${personaMeta.genres[0]} 赛道里大概能活 ${episodeEstimate} 集。${episodeOutcome}${finaleText}${runnerUp ? `如果不是这条线压得最狠，你本来还可能往 ${runnerUp.display_name} 那边滑。` : ""}`,
+    },
   ];
+}
+
+function buildVerdictSummary(personaMeta, topDimensions, dimensionRatings) {
+  const strongest = topDimensions[0];
+  const strongestText = strongest?.name ? DIMENSION_DIAGNOSTICS[strongest.name]?.high : "";
+  const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
+  const controlText = controlScore >= 65
+    ? "好消息是你还知道留点后手，不算彻底裸奔。"
+    : "坏消息是你连给自己留后手这件事都做得一般。";
+  return `${personaMeta.verdict}${strongestText ? strongestText : ""}${controlText}`;
 }
 
 function renderPosterDimensionStrip(topDimensions) {
@@ -473,11 +783,15 @@ function renderDimensionList(dimensionRatings) {
   });
 }
 
-function renderTags(container, values) {
+function renderTags(container, values, variant) {
   container.innerHTML = "";
-  values.forEach((value) => {
+  container.dataset.variant = variant;
+  values.forEach((value, index) => {
     const tag = document.createElement("span");
     tag.className = "tag";
+    if (values.length % 2 === 1 && index === values.length - 1) {
+      tag.classList.add("tag-wide");
+    }
     tag.textContent = value;
     container.appendChild(tag);
   });
@@ -528,7 +842,7 @@ function renderResult() {
   dom.brainlessIndex.textContent = `${brainlessIndex}`;
   dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
-  dom.resultVerdict.textContent = `${personaMeta.verdict} 说白了，你不是没见过离谱，是你已经开始替离谱辩护了。`;
+  dom.resultVerdict.textContent = buildVerdictSummary(personaMeta, topDimensions, dimensionRatings);
   dom.resultQuote.textContent = personaMeta.quote;
   dom.bridgeNote.textContent = "网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。";
   dom.personaFigureImage.src = personaAsset;
@@ -542,8 +856,8 @@ function renderResult() {
   dom.personaFigureButton.onclick = () => showLightbox(personaAsset, personaCaption);
 
   renderDimensionList(dimensionRatings);
-  renderTags(dom.genreTags, personaMeta.genres);
-  renderTags(dom.roleTags, personaMeta.roles);
+  renderTags(dom.genreTags, personaMeta.genres, "genre");
+  renderTags(dom.roleTags, personaMeta.roles, "role");
 
   dom.copyButton.onclick = async () => {
     try {
