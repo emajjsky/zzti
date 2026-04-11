@@ -236,6 +236,18 @@ body {
   justify-content: center;
 }
 
+.hero-lede-panel {
+  max-width: 44rem;
+  padding: 0.8rem 1rem 0.9rem;
+  border: 4px solid var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 250, 242, 0.94)),
+    radial-gradient(circle at 18% 16%, rgba(255, 216, 77, 0.18) 0 16%, transparent 16.5%),
+    #fffdf7;
+  box-shadow: 8px 8px 0 0 var(--shadow);
+  transform: rotate(-1deg);
+}
+
 .hero-lede {
   margin: 0;
   max-width: 14ch;
@@ -243,19 +255,6 @@ body {
   line-height: 1.02;
   font-weight: 900;
   letter-spacing: 0.01em;
-}
-
-.hero-subcopy {
-  max-width: 32rem;
-  margin: 0;
-  padding: 0.6rem 0.8rem;
-  border: 3px solid var(--ink);
-  background: rgba(255, 250, 242, 0.92);
-  box-shadow: 5px 5px 0 0 var(--shadow);
-  font-size: 1rem;
-  line-height: 1.5;
-  font-weight: 700;
-  order: 2;
 }
 
 .hero-copy,
@@ -344,6 +343,12 @@ body {
   background: #f5ffd5;
 }
 
+.info-card {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.32) 0 10%, transparent 10.5%) 0 0 / 26px 26px,
+    linear-gradient(180deg, #f6ffd8 0%, #effbbf 100%);
+}
+
 .card-title {
   margin: 0.25rem 0 0.5rem;
   font-family: var(--title);
@@ -354,6 +359,12 @@ body {
 .card-copy {
   font-size: 0.98rem;
   line-height: 1.72;
+}
+
+.loud-copy {
+  font-size: 1.16rem;
+  line-height: 1.82;
+  font-weight: 700;
 }
 
 .bullet-list {
@@ -880,6 +891,10 @@ body {
 
   .hero-title-overlay-static {
     min-height: 260px;
+  }
+
+  .hero-lede-panel {
+    padding: 0.7rem 0.8rem 0.8rem;
   }
 
   .question-title {
