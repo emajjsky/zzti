@@ -23,15 +23,23 @@ const PERSONA_CLUSTERS = {
 };
 const POSITIVE_DIMENSIONS = new Set(["做局清算"]);
 const GENRE_BUCKET_MAP = {
-  "现代女频": "femaleish",
-  "家庭伦理": "femaleish",
-  "豪门婚恋": "femaleish",
-  "古装宅斗": "femaleish",
-  "都市男频": "maleish",
-  "都市商战": "maleish",
-  "年代商战": "maleish",
-  "金融系统": "maleish",
-  "都市创业": "maleish",
+  "都市男频": "city_power",
+  "都市商战": "city_power",
+  "都市创业": "city_power",
+  "都市职场": "city_power",
+  "金融系统": "city_power",
+  "直播综艺": "spectacle",
+  "年代商战": "business_retro",
+  "穿越重生": "power_fantasy",
+  "修仙玄幻": "power_fantasy",
+  "古装权谋": "power_fantasy",
+  "古装玄学": "power_fantasy",
+  "江湖帮会": "street_power",
+  "乡镇狗血": "street_power",
+  "年代乡土": "street_power",
+  "校园群像": "street_power",
+  "娱乐直播": "spectacle",
+  "综合狗血": "spectacle",
 };
 const DIMENSION_DIAGNOSTICS = {
   "旧情滤镜": {
