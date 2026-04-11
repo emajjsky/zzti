@@ -206,6 +206,29 @@ const HIDDEN_LIBRARY = {
 
 const RESULT_TOKEN_PREFIX = "ZZTI_PAYLOAD::";
 
+const PERSONA_DISPLAY_NAMES = {
+  接绿活佛: "旧情缓刑",
+  歪嘴抄家: "台词超前",
+  帮腔喇叭: "人形弹幕",
+  验资门神: "门槛光谱",
+  跪舔罗盘: "风向膝跳",
+  掀桌疯狗: "爆点过载",
+  录音黑莲: "证据囤积",
+  龙王癔症: "身份待机",
+  系统走狗: "弹窗托管",
+  后仰喇叭: "惊叹外放",
+  装孙军师: "后手月供",
+  巴掌阎王: "当场结算",
+  白月光免罪牌: "旧情特赦",
+  退婚回旋镖: "回踩预存",
+  萌宝军火库: "幼崽外包",
+  认亲广播站: "血缘雷达",
+};
+
+Object.entries(PERSONA_LIBRARY).forEach(([name, meta]) => {
+  meta.display_name = PERSONA_DISPLAY_NAMES[name] || name;
+});
+
 const state = {
   bank: null,
   paper: null,
@@ -281,10 +304,15 @@ function buildPaper(profile = "standard") {
   });
 
   const selectedCore = [];
+  const usedScenarios = new Set();
   const personaIds = shuffle(Object.keys(byPersona));
   personaIds.forEach((personaId) => {
     if (selectedCore.length < config.core) {
-      selectedCore.push(shuffle(byPersona[personaId])[0]);
+      const candidate = shuffle(byPersona[personaId]).find((item) => !usedScenarios.has(item.scenario_id || item.id));
+      if (candidate) {
+        selectedCore.push(candidate);
+        usedScenarios.add(candidate.scenario_id || candidate.id);
+      }
     }
   });
 
@@ -303,8 +331,13 @@ function buildPaper(profile = "standard") {
     if ((personaCount[question.persona_id] || 0) >= 4) {
       return;
     }
+    const scenarioId = question.scenario_id || question.id;
+    if (usedScenarios.has(scenarioId)) {
+      return;
+    }
     selectedCore.push(question);
     personaCount[question.persona_id] = (personaCount[question.persona_id] || 0) + 1;
+    usedScenarios.add(scenarioId);
   });
 
   const antiConflictPool = calibrationQuestions.filter((question) => question.subtype === "anti_conflict");
@@ -417,14 +450,37 @@ function getQuestionTypeLabel(question) {
   return "校准题";
 }
 
-function getQuestionKicker(question) {
+function getQuestionSceneLabel(question) {
   if (question.question_type === "core") {
-    return `人格锚点：${question.result_name} / ${question.metric_name}`;
+    return `剧情壳 · ${question.genre || "剧情现场"}`;
   }
   if (question.question_type === "hidden_trigger") {
-    return `隐藏诊断：${question.hidden_target}`;
+    return "剧情癖好";
   }
-  return `维度校准：${question.dimension}`;
+  return "日常反应";
+}
+
+function getQuestionConflictLabel(question) {
+  if (question.question_type === "core") {
+    const tags = (question.tags || []).slice(0, 2).join(" · ");
+    return `冲突词 · ${tags || "剧情冲突"}`;
+  }
+  if (question.question_type === "hidden_trigger") {
+    const tags = (question.tags || []).slice(0, 2).join(" · ");
+    return `爽点词 · ${tags || "隐藏倾向"}`;
+  }
+  return `校准线 · ${question.dimension || "维度校准"}`;
+}
+
+function getQuestionKicker(question) {
+  if (question.question_type === "core") {
+    const dimensions = (question.primary_dimensions || []).slice(0, 2).join(" / ");
+    return `这题主要看：${dimensions}。别拿台词骗自己，先代入这段剧情再选。`;
+  }
+  if (question.question_type === "hidden_trigger") {
+    return "这题在看你到底是不是已经被狗血桥段训练成了条件反射。";
+  }
+  return `这题做日常校准，主要量你在 ${question.dimension} 这条线上到底会不会失守。`;
 }
 
 function showSection(section) {
@@ -451,8 +507,8 @@ function renderQuestion() {
   dom.questionType.textContent = getQuestionTypeLabel(question);
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round(((state.currentIndex) / total) * 100))}%`;
-  dom.questionGenre.textContent = question.genre || question.dimension || question.hidden_target;
-  dom.questionSource.textContent = question.result_name || question.dimension || question.hidden_target;
+  dom.questionGenre.textContent = getQuestionSceneLabel(question);
+  dom.questionSource.textContent = getQuestionConflictLabel(question);
   dom.questionKicker.textContent = getQuestionKicker(question);
   dom.questionStem.textContent = question.stem;
 
@@ -698,8 +754,9 @@ function renderResult() {
   const dimensionScores = calculateDimensionScores();
   const hiddenScores = calculateHiddenScores();
   const brainlessIndex = calculateBrainlessIndex(dimensionScores);
-  const personaName = pickPersona(dimensionScores);
-  const personaMeta = PERSONA_LIBRARY[personaName];
+  const personaKey = pickPersona(dimensionScores);
+  const personaMeta = PERSONA_LIBRARY[personaKey];
+  const personaName = personaMeta.display_name || personaKey;
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
   const hiddenHits = getHiddenHits(hiddenScores);
@@ -770,9 +827,11 @@ async function loadBank() {
     }
     state.bank = await response.json();
     updateStartButton();
-    dom.loadStatus.textContent = `题库已接入：${state.bank.counts.total_questions} 题，固定发疯卷直接开测。`;
+    dom.loadStatus.textContent = "";
+    dom.loadStatus.classList.add("is-hidden");
   } catch (error) {
     dom.startButton.textContent = "题库加载失败";
+    dom.loadStatus.classList.remove("is-hidden");
     dom.loadStatus.textContent = "当前站点需要通过 HTTP 或 GitHub Pages 打开，不能直接 file:// 打开。";
     console.error(error);
   }
