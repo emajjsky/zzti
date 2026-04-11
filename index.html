@@ -16,8 +16,11 @@
     <header class="site-header">
       <a class="brand" href="#top">
         <span class="brand-badge">ZZTI</span>
-        <span class="brand-text">ZZTI</span>
       </a>
+      <div class="masthead-copy">
+        <p class="masthead-title">ZZTI</p>
+        <p class="masthead-subtitle">短剧看多了吧？来测测你的智障指数。</p>
+      </div>
       <div class="header-actions">
         <span class="stat-pill">500题题库</span>
         <button class="header-home" id="homeButton" type="button">返回主页</button>
@@ -29,37 +32,31 @@
         <div class="hero-grid">
           <div class="hero-main">
             <div class="hero-title-art">
-              <img class="hero-art-image" src="./assets/hero-art.svg" alt="ZZTI 主视觉" />
-              <div class="hero-title-overlay">
+              <div class="hero-title-overlay hero-title-overlay-static">
                 <p class="eyebrow hero-eyebrow">短剧脑回路公开普查</p>
-                <p class="hero-subcopy">一套把你短剧脑子测出裂纹的公开测试站。</p>
+                <h1 class="hero-lede">一套把你短剧脑子测出裂缝的公开测试站。</h1>
+                <p class="hero-subcopy">不是安慰局，是看你到底把判断力押给了旧情、退婚、认亲还是系统弹窗。</p>
               </div>
             </div>
             <p class="hero-copy">
               不是来安慰你的。<br />
-              它只负责把你对白月光、退婚流、掉马打脸、认亲广播和系统弹窗的上瘾程度，当场验成一张公开处刑单。
+              它负责把你对白月光、退婚流、掉马打脸、认亲广播和系统弹窗的上瘾程度，验成一张公开处刑单。
             </p>
             <div class="hero-actions">
               <button class="action-button primary" id="startButton" disabled>
                 题库加载中...
               </button>
             </div>
-            <p class="status-line" id="loadStatus">
-              固定发疯卷正在接入 500 题题库。
-            </p>
+            <p class="status-line is-hidden" id="loadStatus"></p>
           </div>
 
           <aside class="hero-side">
-            <figure class="art-card">
-              <img class="art-image" src="./assets/deco-art.svg" alt="脑残铅笔漫画装饰图" />
-            </figure>
-
             <article class="sticker-card accent-red taunt-card">
               <p class="card-tag">脑残指数</p>
               <h2 class="card-title">不是你笨</h2>
               <p class="card-copy">
-                你是主动把判断力打包扔给白月光、龙王和系统弹窗了。<br />
-                只要有人退婚、认亲、掉马、扇脸，你那点理智就会像廉价塑料凳一样当场裂开。
+                你是把判断力和边界感一起押给了旧情、龙王和系统弹窗。<br />
+                只要有人退婚、认亲、扇脸、插队，你那点理智就会像塑料凳一样当场裂开。
               </p>
             </article>
           </aside>
@@ -87,10 +84,10 @@
         <div class="quiz-layout">
           <article class="question-card">
             <div class="question-stickers">
-              <span class="sticker-label red" id="questionGenre">现代女频</span>
-              <span class="sticker-label yellow" id="questionSource">接绿活佛</span>
+              <span class="sticker-label red" id="questionGenre">剧情壳 · 现代女频</span>
+              <span class="sticker-label yellow" id="questionSource">冲突词 · 旧情插队</span>
             </div>
-            <p class="question-kicker" id="questionKicker">短剧现场：有人准备给你上强度。</p>
+            <p class="question-kicker" id="questionKicker">这题主要看：恋爱脑度 / 降智度。别拿台词骗自己，先代入这段剧情再选。</p>
             <h2 class="question-title" id="questionStem"></h2>
           </article>
 
@@ -101,7 +98,7 @@
       <section class="result-panel is-hidden" id="resultSection">
         <div class="result-hero">
           <div class="result-badge">测试结果</div>
-          <h2 class="result-title" id="resultTitle">你是【接绿活佛】</h2>
+          <h2 class="result-title" id="resultTitle">你是【旧情缓刑】</h2>
           <p class="result-subtitle" id="resultSubtitle"></p>
           <div class="result-meta-strip">
             <span class="result-chip" id="resultSerial">ZZTI-0000</span>
@@ -119,7 +116,7 @@
                     <span class="poster-code" id="posterCode">ZZ-000</span>
                     <span class="poster-rank" id="posterRank">稳定供梗体质</span>
                   </div>
-                  <h3 class="poster-title" id="posterTitle">接绿活佛</h3>
+                  <h3 class="poster-title" id="posterTitle">旧情缓刑</h3>
                   <p class="poster-story" id="posterStory"></p>
                 </div>
                 <div class="poster-art-frame">
@@ -169,8 +166,8 @@
     </main>
 
     <footer class="site-footer">
-      <p>ZZTI</p>
-      <p>静态题库站点 · 500 题 · 公开可部署</p>
+      <p class="footer-mark">ZZTI</p>
+      <p class="footer-copy">短剧看多会不会真变傻？来测测你的脑回路还有没有抢救空间。</p>
     </footer>
   </body>
 </html>
