@@ -74,7 +74,6 @@
         <div class="quiz-topbar">
           <div class="progress-meta">
             <span class="question-counter" id="questionCounter">第 1 / 50 题</span>
-            <span class="question-type" id="questionType">固定卷</span>
           </div>
           <div class="progress-track">
             <div class="progress-fill" id="progressFill"></div>
@@ -86,8 +85,8 @@
 
         <div class="quiz-layout">
           <article class="question-card">
-            <p class="question-kicker" id="questionKicker">这题主要看：某条短剧脑回路。别拿台词骗自己，先代入这段剧情再选。</p>
             <h2 class="question-title" id="questionStem"></h2>
+            <p class="question-storyline" id="questionStoryline"></p>
           </article>
 
           <div class="options-grid" id="optionsContainer"></div>
@@ -108,11 +107,13 @@
               <div class="poster-layout">
                 <div class="poster-copy-wrap">
                   <h3 class="poster-title" id="posterTitle">绿帽瘾君子</h3>
-                  <p class="poster-story" id="posterStory"></p>
+                  <div class="poster-analysis" id="posterAnalysis"></div>
+                  <div class="poster-dimension-strip" id="posterDimensionStrip"></div>
                 </div>
-                <div class="poster-art-frame">
-                  <img class="poster-art-image" src="./assets/deco-art.svg" alt="结果装饰图" />
-                </div>
+                <button class="poster-art-frame persona-figure-trigger" id="personaFigureButton" type="button">
+                  <img class="poster-art-image" id="personaFigureImage" src="./assets/deco-art.svg" alt="结果角色形象图" />
+                  <span class="persona-figure-hint" id="personaFigureHint">点击放大角色形象</span>
+                </button>
               </div>
             </div>
 
@@ -155,6 +156,15 @@
         </div>
       </section>
     </main>
+
+    <div class="image-lightbox is-hidden" id="imageLightbox" aria-hidden="true">
+      <button class="lightbox-backdrop" id="lightboxBackdrop" type="button" aria-label="关闭放大图"></button>
+      <div class="lightbox-panel">
+        <button class="lightbox-close" id="lightboxClose" type="button" aria-label="关闭">关闭</button>
+        <img class="lightbox-image" id="lightboxImage" src="./assets/deco-art.svg" alt="角色形象放大图" />
+        <p class="lightbox-caption" id="lightboxCaption"></p>
+      </div>
+    </div>
 
     <footer class="site-footer">
       <p class="footer-mark">ZZTI</p>

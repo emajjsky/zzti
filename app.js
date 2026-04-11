@@ -31,11 +31,10 @@ const dom = {
   quizSection: document.getElementById("quizSection"),
   resultSection: document.getElementById("resultSection"),
   questionCounter: document.getElementById("questionCounter"),
-  questionType: document.getElementById("questionType"),
   progressFill: document.getElementById("progressFill"),
   brainMeter: document.getElementById("brainMeter"),
-  questionKicker: document.getElementById("questionKicker"),
   questionStem: document.getElementById("questionStem"),
+  questionStoryline: document.getElementById("questionStoryline"),
   optionsContainer: document.getElementById("optionsContainer"),
   resultTitle: document.getElementById("resultTitle"),
   resultSubtitle: document.getElementById("resultSubtitle"),
@@ -48,11 +47,20 @@ const dom = {
   genreTags: document.getElementById("genreTags"),
   roleTags: document.getElementById("roleTags"),
   posterTitle: document.getElementById("posterTitle"),
-  posterStory: document.getElementById("posterStory"),
+  posterAnalysis: document.getElementById("posterAnalysis"),
+  posterDimensionStrip: document.getElementById("posterDimensionStrip"),
+  personaFigureButton: document.getElementById("personaFigureButton"),
+  personaFigureImage: document.getElementById("personaFigureImage"),
+  personaFigureHint: document.getElementById("personaFigureHint"),
   restartButton: document.getElementById("restartButton"),
   copyButton: document.getElementById("copyButton"),
   posterButton: document.getElementById("posterButton"),
   bridgeNote: document.getElementById("bridgeNote"),
+  imageLightbox: document.getElementById("imageLightbox"),
+  lightboxBackdrop: document.getElementById("lightboxBackdrop"),
+  lightboxClose: document.getElementById("lightboxClose"),
+  lightboxImage: document.getElementById("lightboxImage"),
+  lightboxCaption: document.getElementById("lightboxCaption"),
 };
 
 function chooseCore(coreQuestions, count) {
@@ -92,17 +100,24 @@ function getQuestionTypeLabel(question) {
   return "固定卷";
 }
 
-function getQuestionKicker(question) {
-  const dimension = (question.primary_dimensions || [question.dimension || "未分类"])[0];
-  const meta = DIMENSION_META_MAP[dimension];
-  const label = meta ? meta.label : dimension;
-  return `这题主测 ${label}。先代入现场，再选你最像的反应。`;
-}
-
 function showSection(section) {
   dom.landingSection.classList.toggle("is-hidden", section !== "landing");
   dom.quizSection.classList.toggle("is-hidden", section !== "quiz");
   dom.resultSection.classList.toggle("is-hidden", section !== "result");
+}
+
+function showLightbox(src, caption) {
+  dom.lightboxImage.src = src;
+  dom.lightboxCaption.textContent = caption;
+  dom.imageLightbox.classList.remove("is-hidden");
+  dom.imageLightbox.setAttribute("aria-hidden", "false");
+  document.body.classList.add("is-lightbox-open");
+}
+
+function hideLightbox() {
+  dom.imageLightbox.classList.add("is-hidden");
+  dom.imageLightbox.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("is-lightbox-open");
 }
 
 function startTest() {
@@ -120,11 +135,10 @@ function renderQuestion() {
   const progress = ((state.currentIndex + 1) / total) * 100;
 
   dom.questionCounter.textContent = `第 ${state.currentIndex + 1} / ${total} 题`;
-  dom.questionType.textContent = getQuestionTypeLabel(question);
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
-  dom.questionKicker.textContent = getQuestionKicker(question);
   dom.questionStem.textContent = question.stem;
+  dom.questionStoryline.textContent = question.storyline || "";
 
   dom.optionsContainer.innerHTML = "";
   question.options.forEach((option) => {
@@ -336,6 +350,84 @@ function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
 }
 
+function getDimensionScoreValue(dimensionRatings, dimensionName) {
+  return dimensionRatings.find((item) => item.name === dimensionName)?.score ?? 50;
+}
+
+function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings) {
+  const [first, second, third] = topDimensions;
+  const safe = (item, fallback) => (item ? `${item.label}${item.score}` : fallback);
+  const highBackbone = dimensionRatings
+    .filter((item) => item.score >= 60)
+    .slice(0, 4)
+    .map((item) => item.label.replace("指数", ""))
+    .join("、");
+  const habitText = highBackbone || "离谱剧情惯性";
+  const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
+  const rageScore = getDimensionScoreValue(dimensionRatings, "爆冲翻脸");
+  const fantasyScore = getDimensionScoreValue(dimensionRatings, "外挂吞钩");
+  const oldLoveScore = getDimensionScoreValue(dimensionRatings, "旧情滤镜");
+  const greenScore = getDimensionScoreValue(dimensionRatings, "绿帽耐受");
+  const sacrificeScore = getDimensionScoreValue(dimensionRatings, "献祭填坑");
+  const crowdScore = Math.round(
+    (
+      getDimensionScoreValue(dimensionRatings, "炒茶拱火") +
+      getDimensionScoreValue(dimensionRatings, "站队复读") +
+      getDimensionScoreValue(dimensionRatings, "跪舔换边") +
+      getDimensionScoreValue(dimensionRatings, "门槛压人")
+    ) / 4,
+  );
+  const relationshipScore = Math.round((oldLoveScore + greenScore + sacrificeScore) / 3);
+  const spectacleScore = Math.round(
+    (
+      getDimensionScoreValue(dimensionRatings, "台词膨胀") +
+      getDimensionScoreValue(dimensionRatings, "掉马妄想") +
+      fantasyScore
+    ) / 3,
+  );
+
+  let patternText = "你最致命的毛病，是明明已经看见离谱苗头，还总想替剧情再续半口气。";
+  if (relationshipScore >= crowdScore && relationshipScore >= spectacleScore) {
+    patternText = "你在关系局里最容易失手。只要旧情、越界和情感绑架一起出现，你就会本能地替别人找苦衷，把该翻脸的时刻硬拖成继续消耗自己的长线苦情戏。";
+  } else if (crowdScore >= relationshipScore && crowdScore >= spectacleScore) {
+    patternText = "你在群像局里最容易上头。风向一变、强弱一分、场面一热，你就会忍不住跟着补口径、换位置、替更吵的那边把刀递完整。";
+  } else {
+    patternText = "你对爽文刺激的耐受已经很低了。狠话、掉马、认亲、外挂这些词一冒头，你就容易先被脑内配乐劫持，再把现实判断外包给戏剧高潮。";
+  }
+
+  let triggerText = `平时看起来像还能讲理，真进冲突现场，你的判断力就会优先押给 ${habitText}。`;
+  if (controlScore >= 72) {
+    triggerText = `好在你的做局清算指数还有 ${controlScore}，说明你不是纯莽，你知道什么时候该留证、什么时候该等对方再多露半张底牌。只是只要被踩中 ${habitText} 这些点，耐心就会开始松。`;
+  } else if (rageScore >= 70) {
+    triggerText = `你现在最危险的短板，是爆冲翻脸 ${rageScore} 配上做局清算 ${controlScore}。这意味着你经常还没把证据攒齐，就已经先想把桌子、关系和场面一起炸穿，爽是爽了，后手也跟着烧没。`;
+  } else {
+    triggerText = `你这套反应不是单点失控，而是慢慢被拖进戏里。先是把边界让掉一点，再替离谱解释一点，等真的想反击时，局势往往已经被别人带到他们更擅长的频道里。`;
+  }
+
+  let finaleText = `脑残指数 ${brainlessIndex} 不只是一个乐子分，它说明你已经具备把普通矛盾活活演成连载狗血长篇的稳定天赋。扔进 ${personaMeta.genres[0]} 赛道，你基本会被剪成 ${personaMeta.roles[0]} 位：前半段替剧情续命，后半段再替自己的上头买单。`;
+  if (spectacleScore >= 72) {
+    finaleText = `脑残指数 ${brainlessIndex} 说明你已经很适合被扔进 ${personaMeta.genres[0]} 赛道做高浓度燃料了。编剧只要给你配一通电话、一块玉佩或者一句“其实你身份不简单”，你就能立刻从普通人切到 ${personaMeta.roles[0]} 模式，开始给自己脑补整季反杀分镜。`;
+  } else if (relationshipScore >= 72) {
+    finaleText = `脑残指数 ${brainlessIndex} 说明你特别适合被编剧拿去做苦主型角色耗材。放进 ${personaMeta.genres[0]} 里，你大概率会被剪成 ${personaMeta.roles[0]}：委屈吞得比谁都整齐，醒悟永远晚半拍，专门负责把观众血压托上去。`;
+  }
+
+  return [
+    { title: "核心病灶", text: `你这套脑回路不是某一根线断了，而是 ${safe(first, "旧情滤镜")}、${safe(second, "爆冲翻脸")}、${safe(third, "外挂吞钩")} 几根线同时拧死。${patternText}` },
+    { title: "发病现场", text: triggerText },
+    { title: "结局分镜", text: finaleText },
+  ];
+}
+
+function renderPosterDimensionStrip(topDimensions) {
+  dom.posterDimensionStrip.innerHTML = "";
+  topDimensions.forEach((item) => {
+    const chip = document.createElement("span");
+    chip.className = "poster-dimension-chip";
+    chip.textContent = `${item.label}${item.score}`;
+    dom.posterDimensionStrip.appendChild(chip);
+  });
+}
+
 function encodeBase64Url(text) {
   const bytes = new TextEncoder().encode(text);
   let binary = "";
@@ -414,20 +506,42 @@ function renderResult() {
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
   const hiddenHits = [];
+  const detailedAnalysis = buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings);
   const resultTokenPayload = buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits);
   const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
   const posterCommand = buildPosterCommand(resultToken);
+  const personaAsset = personaMeta.asset || "./assets/deco-art.svg";
+  const personaCaption = `${personaName} · ${personaMeta.quote}`;
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
   dom.resultSubtitle.textContent = `很不幸，${personaMeta.tagline}`;
   dom.posterTitle.textContent = personaName;
-  dom.posterStory.textContent = buildPosterStory(personaMeta, brainlessIndex, topDimensions);
+  dom.posterAnalysis.innerHTML = detailedAnalysis
+    .map(
+      (item, index) => `
+        <article class="analysis-card analysis-card-${index + 1}">
+          <span class="analysis-card-title">${item.title}</span>
+          <p>${item.text}</p>
+        </article>
+      `,
+    )
+    .join("");
+  renderPosterDimensionStrip(topDimensions);
   dom.brainlessIndex.textContent = `${brainlessIndex}`;
   dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = `${personaMeta.verdict} 说白了，你不是没见过离谱，是你已经开始替离谱辩护了。`;
   dom.resultQuote.textContent = personaMeta.quote;
   dom.bridgeNote.textContent = "网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。";
+  dom.personaFigureImage.src = personaAsset;
+  dom.personaFigureImage.alt = `${personaName} 角色形象图`;
+  dom.personaFigureHint.textContent = `点击放大 ${personaName} 角色形象`;
+  dom.personaFigureImage.onerror = () => {
+    dom.personaFigureImage.onerror = null;
+    dom.personaFigureImage.src = "./assets/deco-art.svg";
+    dom.personaFigureHint.textContent = `${personaName} 角色图待补`;
+  };
+  dom.personaFigureButton.onclick = () => showLightbox(personaAsset, personaCaption);
 
   renderDimensionList(dimensionRatings);
   renderTags(dom.genreTags, personaMeta.genres);
@@ -534,6 +648,14 @@ function bindEvents() {
 
   dom.restartButton.addEventListener("click", () => {
     startTest();
+  });
+
+  dom.lightboxBackdrop.addEventListener("click", hideLightbox);
+  dom.lightboxClose.addEventListener("click", hideLightbox);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !dom.imageLightbox.classList.contains("is-hidden")) {
+      hideLightbox();
+    }
   });
 }
 
