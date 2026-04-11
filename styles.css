@@ -331,6 +331,10 @@ body {
   transform: rotate(-1.5deg);
 }
 
+.sticker-card.no-tag {
+  padding-top: 0.95rem;
+}
+
 .sticker-card.offset {
   transform: rotate(2deg);
 }
@@ -354,6 +358,10 @@ body {
   font-family: var(--title);
   font-size: clamp(1.75rem, 3vw, 2.4rem);
   line-height: 1.05;
+}
+
+.sticker-card.no-tag .card-title {
+  margin-top: 0;
 }
 
 .card-copy {
