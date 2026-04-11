@@ -34,7 +34,6 @@ const dom = {
   progressFill: document.getElementById("progressFill"),
   brainMeter: document.getElementById("brainMeter"),
   questionStem: document.getElementById("questionStem"),
-  questionStoryline: document.getElementById("questionStoryline"),
   optionsContainer: document.getElementById("optionsContainer"),
   resultTitle: document.getElementById("resultTitle"),
   resultSubtitle: document.getElementById("resultSubtitle"),
@@ -138,7 +137,6 @@ function renderQuestion() {
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
   dom.questionStem.textContent = question.stem;
-  dom.questionStoryline.textContent = question.storyline || "";
 
   dom.optionsContainer.innerHTML = "";
   question.options.forEach((option) => {
