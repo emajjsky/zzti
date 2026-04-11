@@ -21,6 +21,18 @@ const PERSONA_CLUSTERS = {
   spectacle: ["台词膨胀", "掉马妄想", "外挂吞钩"],
   retaliation: ["爆冲翻脸", "做局清算"],
 };
+const POSITIVE_DIMENSIONS = new Set(["做局清算"]);
+const GENRE_BUCKET_MAP = {
+  "现代女频": "femaleish",
+  "家庭伦理": "femaleish",
+  "豪门婚恋": "femaleish",
+  "古装宅斗": "femaleish",
+  "都市男频": "maleish",
+  "都市商战": "maleish",
+  "年代商战": "maleish",
+  "金融系统": "maleish",
+  "都市创业": "maleish",
+};
 const DIMENSION_DIAGNOSTICS = {
   "旧情滤镜": {
     high: "你对旧关系的情绪记忆太长，别人只要抛一个苦衷，你就容易把旧账重新当未完待续。",
@@ -162,6 +174,10 @@ function shuffleOptions(question, seed) {
   }));
 }
 
+function getGenreBucket(genre) {
+  return GENRE_BUCKET_MAP[genre] || genre;
+}
+
 function chooseCore(coreQuestions, count, seed) {
   const ordered = coreQuestions
     .slice()
@@ -187,6 +203,8 @@ function chooseCore(coreQuestions, count, seed) {
         }
         if (question.genre === last.genre) {
           score += 24;
+        } else if (getGenreBucket(question.genre) === getGenreBucket(last.genre)) {
+          score += 11;
         }
         if (question.scene_cluster === last.scene_cluster) {
           score += 12;
@@ -199,6 +217,8 @@ function chooseCore(coreQuestions, count, seed) {
         }
         if (question.genre === beforeLast.genre) {
           score += 8;
+        } else if (getGenreBucket(question.genre) === getGenreBucket(beforeLast.genre)) {
+          score += 4;
         }
       }
 
@@ -546,7 +566,22 @@ function getDimensionMeta(name) {
   };
 }
 
-function getDimensionLevel(score) {
+function getDimensionLevel(name, score) {
+  if (POSITIVE_DIMENSIONS.has(name)) {
+    if (score < 20) {
+      return "当场送头";
+    }
+    if (score < 40) {
+      return "后手偏少";
+    }
+    if (score < 60) {
+      return "勉强能忍";
+    }
+    if (score < 80) {
+      return "留证熟练";
+    }
+    return "收网成精";
+  }
   if (score < 20) {
     return "人味尚存";
   }
@@ -572,7 +607,7 @@ function buildDimensionRatings(dimensionScores) {
       group: meta.group,
       summary: meta.summary,
       score,
-      level: getDimensionLevel(score),
+      level: getDimensionLevel(dimension, score),
     };
   });
 }
@@ -588,14 +623,14 @@ function getTopDimensions(dimensionScores, count = 3) {
         dimension,
         label: meta.label,
         score,
-        level: getDimensionLevel(score),
+        level: getDimensionLevel(dimension, score),
       };
     });
 }
 
 function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   const dimensionText = topDimensions.map((item) => `${item.label}${item.score}`).join(" / ");
-  return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
+  return `你最显眼的短剧脑回路集中在 ${dimensionText} 这几处。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
 }
 
 function getDimensionScoreValue(dimensionRatings, dimensionName) {
@@ -803,7 +838,7 @@ function buildShareText(personaName, personaMeta, brainlessIndex, topDimensions)
     `脑残指数：${brainlessIndex}`,
     `适配赛道：${personaMeta.genres.join(" / ")}`,
     `高频角色位：${personaMeta.roles.join(" / ")}`,
-    `高危指数：${topDimensions.map((item) => `${item.label}${item.score}(${item.level})`).join(" / ")}`,
+    `主导指数：${topDimensions.map((item) => `${item.label}${item.score}(${item.level})`).join(" / ")}`,
     "诊断结论：脑子已经被短剧腌透了",
   ].join("\n");
 }
