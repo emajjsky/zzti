@@ -53,7 +53,6 @@ body {
 .question-card,
 .result-card,
 .option-card,
-.stat-pill,
 .brand-badge,
 .sticker-label,
 .result-badge {
@@ -152,16 +151,6 @@ body {
   font-size: 0.9rem;
   font-weight: 800;
   cursor: pointer;
-}
-
-.stat-pill {
-  background: #fff;
-  padding: 0.45rem 0.75rem;
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .page-shell {
@@ -480,7 +469,7 @@ body {
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .progress-meta {
@@ -521,73 +510,48 @@ body {
 
 .quiz-layout {
   display: grid;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .question-card {
   position: relative;
   background: #fff;
-  padding: 1.25rem;
+  padding: 1rem 1rem 0.95rem;
   transform: rotate(-0.9deg);
 }
 
-.question-stickers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.sticker-label {
-  padding: 0.3rem 0.65rem;
-  font-family: var(--mono);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: none;
-  box-shadow: 4px 4px 0 0 var(--shadow);
-}
-
-.sticker-label.red {
-  background: var(--hot);
-  color: #fff;
-}
-
-.sticker-label.yellow {
-  background: var(--sun);
-}
-
 .question-kicker {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.55rem;
   font-family: var(--mono);
+  font-size: 0.88rem;
   letter-spacing: 0.02em;
-  line-height: 1.55;
+  line-height: 1.45;
   text-transform: none;
 }
 
 .question-title {
   margin: 0;
-  font-size: clamp(1.55rem, 3.5vw, 2.8rem);
-  line-height: 1.28;
+  font-size: clamp(1.28rem, 2.45vw, 2.1rem);
+  line-height: 1.18;
   font-weight: 800;
 }
 
 .options-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .option-card {
   appearance: none;
   border: 4px solid var(--ink);
   background: #fff;
-  padding: 1rem;
+  padding: 0.8rem 0.85rem;
   text-align: left;
   box-shadow: 6px 6px 0 0 var(--shadow);
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-  min-height: 180px;
+  min-height: 132px;
 }
 
 .option-card:hover {
@@ -607,13 +571,13 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  margin-bottom: 0.9rem;
+  width: 2.3rem;
+  height: 2.3rem;
+  margin-bottom: 0.65rem;
   border: 3px solid var(--ink);
   background: var(--sun);
   font-family: var(--title);
-  font-size: 1.4rem;
+  font-size: 1.2rem;
 }
 
 .option-card:nth-child(2) .option-key {
@@ -631,8 +595,8 @@ body {
 
 .option-text {
   display: block;
-  font-size: 1.08rem;
-  line-height: 1.5;
+  font-size: 0.96rem;
+  line-height: 1.42;
   font-weight: 700;
 }
 
@@ -658,27 +622,6 @@ body {
 .result-subtitle {
   max-width: 900px;
   margin-top: 0.5rem;
-}
-
-.result-meta-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-top: 1rem;
-}
-
-.result-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.35rem 0.7rem;
-  border: 3px solid var(--ink);
-  background: #fff;
-  box-shadow: 4px 4px 0 0 var(--shadow);
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .result-grid {
@@ -741,14 +684,6 @@ body {
   text-transform: uppercase;
 }
 
-.poster-topline {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: center;
-}
-
 .poster-art-frame {
   border: 4px solid var(--ink);
   box-shadow: 6px 6px 0 0 var(--shadow);
@@ -764,17 +699,8 @@ body {
   object-fit: cover;
 }
 
-.poster-code,
-.poster-rank {
-  font-family: var(--mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 .poster-title {
-  margin: 0.75rem 0 0;
+  margin: 0.2rem 0 0;
   font-family: var(--title);
   font-size: clamp(2rem, 5vw, 3.4rem);
   line-height: 0.95;
@@ -969,6 +895,14 @@ body {
 
   .hero-title-overlay-static {
     min-height: 260px;
+  }
+
+  .question-title {
+    font-size: clamp(1.18rem, 6vw, 1.6rem);
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
   }
 
   .page-shell {

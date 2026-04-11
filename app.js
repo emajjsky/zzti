@@ -34,8 +34,6 @@ const dom = {
   questionType: document.getElementById("questionType"),
   progressFill: document.getElementById("progressFill"),
   brainMeter: document.getElementById("brainMeter"),
-  questionGenre: document.getElementById("questionGenre"),
-  questionSource: document.getElementById("questionSource"),
   questionKicker: document.getElementById("questionKicker"),
   questionStem: document.getElementById("questionStem"),
   optionsContainer: document.getElementById("optionsContainer"),
@@ -49,10 +47,6 @@ const dom = {
   dimensionList: document.getElementById("dimensionList"),
   genreTags: document.getElementById("genreTags"),
   roleTags: document.getElementById("roleTags"),
-  resultSerial: document.getElementById("resultSerial"),
-  resultRank: document.getElementById("resultRank"),
-  posterCode: document.getElementById("posterCode"),
-  posterRank: document.getElementById("posterRank"),
   posterTitle: document.getElementById("posterTitle"),
   posterStory: document.getElementById("posterStory"),
   restartButton: document.getElementById("restartButton"),
@@ -98,20 +92,11 @@ function getQuestionTypeLabel(question) {
   return "固定卷";
 }
 
-function getQuestionSceneLabel(question) {
-  return `剧情壳 · ${question.genre || "剧情现场"}`;
-}
-
-function getQuestionConflictLabel(question) {
-  const tags = (question.tags || []).slice(0, 2).join(" · ");
-  return `冲突词 · ${tags || "剧情冲突"}`;
-}
-
 function getQuestionKicker(question) {
   const dimension = (question.primary_dimensions || [question.dimension || "未分类"])[0];
   const meta = DIMENSION_META_MAP[dimension];
   const label = meta ? meta.label : dimension;
-  return `这题主测 ${label}。先把自己代进这段狗血剧情，再选你最像的那一下。`;
+  return `这题主测 ${label}。先代入现场，再选你最像的反应。`;
 }
 
 function showSection(section) {
@@ -138,8 +123,6 @@ function renderQuestion() {
   dom.questionType.textContent = getQuestionTypeLabel(question);
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
-  dom.questionGenre.textContent = getQuestionSceneLabel(question);
-  dom.questionSource.textContent = getQuestionConflictLabel(question);
   dom.questionKicker.textContent = getQuestionKicker(question);
   dom.questionStem.textContent = question.stem;
 
@@ -348,16 +331,6 @@ function getTopDimensions(dimensionScores, count = 3) {
     });
 }
 
-function buildSampleCode(personaName, brainlessIndex) {
-  const initials = personaName
-    .slice(0, 3)
-    .split("")
-    .map((char) => char.charCodeAt(0).toString(16).slice(-2))
-    .join("")
-    .toUpperCase();
-  return `ZZ-${String(brainlessIndex).padStart(2, "0")}-${initials}`;
-}
-
 function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   const dimensionText = topDimensions.map((item) => `${item.label}${item.score}`).join(" / ");
   return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
@@ -441,17 +414,12 @@ function renderResult() {
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
   const hiddenHits = [];
-  const sampleCode = buildSampleCode(personaName, brainlessIndex);
   const resultTokenPayload = buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits);
   const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
   const posterCommand = buildPosterCommand(resultToken);
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
   dom.resultSubtitle.textContent = `很不幸，${personaMeta.tagline}`;
-  dom.resultSerial.textContent = sampleCode;
-  dom.resultRank.textContent = verdictLabel;
-  dom.posterCode.textContent = sampleCode;
-  dom.posterRank.textContent = verdictLabel;
   dom.posterTitle.textContent = personaName;
   dom.posterStory.textContent = buildPosterStory(personaMeta, brainlessIndex, topDimensions);
   dom.brainlessIndex.textContent = `${brainlessIndex}`;
@@ -459,7 +427,7 @@ function renderResult() {
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = `${personaMeta.verdict} 说白了，你不是没见过离谱，是你已经开始替离谱辩护了。`;
   dom.resultQuote.textContent = personaMeta.quote;
-  dom.bridgeNote.textContent = `网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。结果编号：${sampleCode}`;
+  dom.bridgeNote.textContent = "网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。";
 
   renderDimensionList(dimensionRatings);
   renderTags(dom.genreTags, personaMeta.genres);
