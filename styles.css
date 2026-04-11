@@ -564,7 +564,7 @@ body.is-lightbox-open {
   box-shadow: 6px 6px 0 0 var(--shadow);
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-  min-height: 126px;
+  min-height: 112px;
 }
 
 .option-card:hover {
@@ -586,7 +586,7 @@ body.is-lightbox-open {
   justify-content: center;
   width: 2.3rem;
   height: 2.3rem;
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.8rem;
   border: 3px solid var(--ink);
   background: var(--sun);
   font-family: var(--title);
@@ -646,6 +646,42 @@ body.is-lightbox-open {
   display: block;
   font-size: 0.92rem;
   line-height: 1.46;
+  font-weight: 700;
+}
+
+.result-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.result-meta-pill {
+  border: 3px solid var(--ink);
+  background: #fff;
+  box-shadow: 5px 5px 0 0 var(--shadow);
+  padding: 0.7rem 0.8rem;
+}
+
+.result-meta-pill span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.result-meta-pill strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.result-evidence {
+  margin-top: 0.7rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
   font-weight: 700;
 }
 
@@ -1199,6 +1235,10 @@ body.is-lightbox-open {
   }
 
   .options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-meta-grid {
     grid-template-columns: 1fr;
   }
 

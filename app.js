@@ -15,6 +15,7 @@ let DIMENSION_META_MAP = {};
 let BRAINLESS_WEIGHTS = {};
 let PERSONA_LIBRARY = {};
 const OPTION_LABELS = ["A", "B", "C", "D"];
+const OPTION_SEVERITY_MAP = { A: 0, B: 1, C: 2, D: 3 };
 const PERSONA_CLUSTERS = {
   relationship: ["旧情滤镜", "绿帽耐受", "献祭填坑"],
   crowd: ["炒茶拱火", "站队复读", "跪舔换边", "门槛压人"],
@@ -120,6 +121,10 @@ const dom = {
   brainlessFill: document.getElementById("brainlessFill"),
   brainlessVerdict: document.getElementById("brainlessVerdict"),
   resultVerdict: document.getElementById("resultVerdict"),
+  resultConfidence: document.getElementById("resultConfidence"),
+  resultStability: document.getElementById("resultStability"),
+  resultNeighbor: document.getElementById("resultNeighbor"),
+  resultEvidence: document.getElementById("resultEvidence"),
   resultQuote: document.getElementById("resultQuote"),
   dimensionList: document.getElementById("dimensionList"),
   genreTags: document.getElementById("genreTags"),
@@ -340,7 +345,7 @@ function renderQuestion() {
       button.classList.add("is-selected");
     }
     button.type = "button";
-    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-stance">${option.stance || option.level || option.id}</span><span class="option-text">${option.text}</span>`;
+    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-text">${option.text}</span>`;
     button.addEventListener("click", () => {
       state.answers[state.currentIndex] = { question, option };
       if (state.currentIndex === total - 1) {
@@ -555,6 +560,277 @@ function pickPersona(dimensionScores) {
   return rankPersonas(dimensionScores)[0]?.name || null;
 }
 
+function getConfidenceLabel(score) {
+  if (score < 45) {
+    return "边缘撞型";
+  }
+  if (score < 60) {
+    return "摇摆命中";
+  }
+  if (score < 75) {
+    return "基本坐实";
+  }
+  return "高危坐实";
+}
+
+function buildConfidenceScore(personaRanking, personaMeta, dimensionScores, topDimensions) {
+  const runnerUp = personaRanking[1] || null;
+  const runnerUpName = runnerUp ? (PERSONA_LIBRARY[runnerUp.name]?.display_name || runnerUp.name) : "无明显邻近人格";
+  const runnerUpGap = Math.round(runnerUp ? personaRanking[0].score - runnerUp.score : 36);
+
+  const averageAlignment = (dimensions, fallback) => {
+    if (!dimensions || !dimensions.length) {
+      return fallback;
+    }
+    const values = dimensions.map((dimension) => {
+      const target = personaMeta.targets?.[dimension] ?? 50;
+      const actual = dimensionScores[dimension] ?? 50;
+      return Math.max(0, 100 - Math.abs(actual - target));
+    });
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  };
+
+  const primaryAlignment = averageAlignment(personaMeta.primary || [], 68);
+  const secondaryAlignment = averageAlignment(personaMeta.secondary || [], 60);
+  const topDimensionNames = topDimensions.map((item) => item.name);
+  const dominantHitCount = topDimensionNames.filter((name) => (personaMeta.primary || []).includes(name)).length;
+  const offProfileCount = topDimensionNames.filter((name) => (personaMeta.targets?.[name] ?? 50) <= 35).length;
+
+  const confidenceScore = clamp(
+    Math.round(
+      28
+        + Math.min(Math.max(runnerUpGap, 0), 40) * 0.95
+        + Math.max(primaryAlignment - 55, 0) * 0.42
+        + Math.max(secondaryAlignment - 50, 0) * 0.18
+        + dominantHitCount * 6
+        - offProfileCount * 6,
+    ),
+    32,
+    96,
+  );
+
+  return {
+    confidenceScore,
+    confidenceLabel: getConfidenceLabel(confidenceScore),
+    runnerUpName,
+    runnerUpGap,
+  };
+}
+
+function getStabilityLabel(score) {
+  if (score < 45) {
+    return "波动失真";
+  }
+  if (score < 60) {
+    return "起伏偏大";
+  }
+  if (score < 75) {
+    return "基本稳定";
+  }
+  return "稳定成型";
+}
+
+function buildAnswerStability(answerRecords, dimensionScores) {
+  const grouped = {};
+  answerRecords.forEach(({ question, option }) => {
+    const metricName = question.metric_name || "";
+    if (!metricName) {
+      return;
+    }
+    if (!grouped[metricName]) {
+      grouped[metricName] = [];
+    }
+    grouped[metricName].push(OPTION_SEVERITY_MAP[option.level || option.id] || 0);
+  });
+
+  const metricConsistency = [];
+  const metricScores = [];
+
+  Object.entries(grouped).forEach(([metricName, values]) => {
+    if (values.length < 3) {
+      return;
+    }
+    const spread = Math.max(...values) - Math.min(...values);
+    const meanValue = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance = values.reduce((sum, value) => sum + ((value - meanValue) ** 2), 0) / values.length;
+    const metricScore = clamp(Math.round(100 - spread * 16 - variance * 18), 34, 100);
+    metricScores.push(metricScore);
+    metricConsistency.push({
+      metricName,
+      score: metricScore,
+      spread: Math.round(spread * 100) / 100,
+      variance: Math.round(variance * 100) / 100,
+    });
+  });
+
+  const conflictFlags = [];
+  let penalty = 0;
+  if ((dimensionScores["爆冲翻脸"] || 50) >= 78 && (dimensionScores["做局清算"] || 50) >= 78) {
+    conflictFlags.push("又想掀桌又想养局");
+    penalty += 10;
+  }
+  if ((dimensionScores["旧情滤镜"] || 50) <= 25 && (dimensionScores["绿帽耐受"] || 50) >= 82) {
+    conflictFlags.push("对白月光冷却对越界过忍");
+    penalty += 8;
+  }
+  if ((dimensionScores["外挂吞钩"] || 50) >= 85 && (dimensionScores["做局清算"] || 50) >= 82) {
+    conflictFlags.push("一边信天降外挂一边想证据收网");
+    penalty += 7;
+  }
+
+  const baseline = metricScores.length
+    ? Math.round(metricScores.reduce((sum, value) => sum + value, 0) / metricScores.length)
+    : 58;
+  const stabilityScore = clamp(baseline - penalty, 28, 98);
+
+  return {
+    stabilityScore,
+    stabilityLabel: getStabilityLabel(stabilityScore),
+    conflictFlags,
+    metricConsistency,
+  };
+}
+
+function buildBlendMeta(personaRanking) {
+  const runnerUp = personaRanking[1] || null;
+  if (!runnerUp) {
+    return {
+      secondaryPersonaName: "无明显副人格",
+      primaryPersonaShare: 100,
+      secondaryPersonaShare: 0,
+      blendLabel: "单核坐实",
+    };
+  }
+  const runnerUpName = PERSONA_LIBRARY[runnerUp.name]?.display_name || runnerUp.name;
+  const gap = Math.round((personaRanking[0]?.score || 0) - runnerUp.score);
+  const secondaryPersonaShare = clamp(Math.round(42 - Math.max(gap, 0) / 3), 18, 41);
+  const primaryPersonaShare = 100 - secondaryPersonaShare;
+  let blendLabel = "单核坐实";
+  if (secondaryPersonaShare >= 35) {
+    blendLabel = "双芯混响";
+  } else if (secondaryPersonaShare >= 28) {
+    blendLabel = "偏混合";
+  }
+  return {
+    secondaryPersonaName: runnerUpName,
+    primaryPersonaShare,
+    secondaryPersonaShare,
+    blendLabel,
+  };
+}
+
+function truncateText(text, limit = 42) {
+  const compact = String(text || "").replace(/\s+/g, "");
+  if (compact.length <= limit) {
+    return compact;
+  }
+  return `${compact.slice(0, limit - 1)}…`;
+}
+
+function buildAnswerEvidence(answerRecords, personaMeta, topDimensions, count = 3) {
+  const focusDimensions = [];
+  topDimensions.forEach((item) => {
+    if (!focusDimensions.includes(item.name)) {
+      focusDimensions.push(item.name);
+    }
+  });
+  (personaMeta.primary || []).forEach((dimension) => {
+    if (!focusDimensions.includes(dimension)) {
+      focusDimensions.push(dimension);
+    }
+  });
+  (personaMeta.secondary || []).forEach((dimension) => {
+    if (!focusDimensions.includes(dimension)) {
+      focusDimensions.push(dimension);
+    }
+  });
+
+  const ranked = answerRecords
+    .map(({ question, option }) => {
+      const weights = option.weights || {};
+      let impact = 0;
+      const matchedDimensions = [];
+
+      focusDimensions.forEach((dimension) => {
+        const value = weights[dimension] || 0;
+        if (value === 0) {
+          return;
+        }
+        const target = personaMeta.targets?.[dimension] ?? 50;
+        let alignedValue = Math.abs(value) * 0.35;
+        if (target >= 65 && value > 0) {
+          alignedValue = value;
+        } else if (target <= 35 && value < 0) {
+          alignedValue = Math.abs(value);
+        }
+        if ((personaMeta.primary || []).includes(dimension)) {
+          impact += alignedValue * 2.6;
+        } else if (topDimensions.some((item) => item.name === dimension)) {
+          impact += alignedValue * 1.9;
+        } else {
+          impact += alignedValue * 1.2;
+        }
+        matchedDimensions.push(dimension);
+      });
+
+      if (impact <= 0) {
+        return null;
+      }
+
+      impact += (OPTION_SEVERITY_MAP[option.level || option.original_id || option.id] || 0) * 0.8;
+      return {
+        questionId: question.id,
+        metricName: question.metric_name || "",
+        stemExcerpt: truncateText(question.stem),
+        optionText: option.text,
+        dimensions: matchedDimensions,
+        dimensionLabels: matchedDimensions.map((dimension) => getDimensionMeta(dimension).label.replace("指数", "")),
+        impact: Math.round(impact * 100) / 100,
+      };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.impact - left.impact);
+
+  const selected = [];
+  const coveredDimensions = new Set();
+  const coveredMetrics = new Set();
+
+  ranked.forEach((item) => {
+    if (selected.length >= count) {
+      return;
+    }
+    const freshDimension = item.dimensions.some((dimension) => !coveredDimensions.has(dimension));
+    const freshMetric = !coveredMetrics.has(item.metricName);
+    if (freshDimension || freshMetric || !selected.length) {
+      selected.push(item);
+      item.dimensions.forEach((dimension) => coveredDimensions.add(dimension));
+      if (item.metricName) {
+        coveredMetrics.add(item.metricName);
+      }
+    }
+  });
+
+  if (selected.length < count) {
+    const selectedIds = new Set(selected.map((item) => item.questionId));
+    ranked.forEach((item) => {
+      if (selected.length >= count || selectedIds.has(item.questionId)) {
+        return;
+      }
+      selected.push(item);
+      selectedIds.add(item.questionId);
+    });
+  }
+
+  return selected;
+}
+
+function buildEvidenceDigest(answerEvidence) {
+  if (!answerEvidence.length) {
+    return "这次答卷没留下足够清晰的证据链，结果更像撞型，不像铁案。";
+  }
+  return `这次判定主要咬住了你在 ${answerEvidence.map((item) => `「${item.stemExcerpt}」`).join("、")} 这几道题上的选法。`;
+}
+
 function getVerdictLabel(index) {
   if (index < 20) {
     return "人味尚存";
@@ -662,7 +938,16 @@ function getDimensionSalience(item) {
   return item.score;
 }
 
-function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings) {
+function buildDetailedAnalysis(
+  personaMeta,
+  brainlessIndex,
+  topDimensions,
+  dimensionRatings,
+  confidenceMeta,
+  stabilityMeta,
+  blendMeta,
+  answerEvidence,
+) {
   const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
   const rageScore = getDimensionScoreValue(dimensionRatings, "爆冲翻脸");
   const fantasyScore = getDimensionScoreValue(dimensionRatings, "外挂吞钩");
@@ -718,6 +1003,9 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
   }
   const attributeText = `${personaMeta.tagline || personaMeta.result_intro}主触发区基本落在 ${triggerNames} 这一挂，只要这些元素往你面前一摆，你就容易自动入戏。`;
   const glossaryText = `${personaMeta.verdict}这类人最大的共性不是单纯坏或单纯蠢，而是特别容易把短剧里的离谱桥段当成自己的现实处理方式。`;
+  const evidenceText = answerEvidence.length
+    ? answerEvidence.map((item) => `你在「${item.stemExcerpt}」里选了「${item.optionText}」`).join("；")
+    : "这轮答卷没有拉出特别清晰的题目证据，所以更像撞型，不像铁案。";
   return [
     {
       title: "属性",
@@ -742,6 +1030,14 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
     {
       title: "弹幕锐评",
       text: personaMeta.result_comment || personaMeta.quote,
+    },
+    {
+      title: "判定证据",
+      text: `${evidenceText}。这也是这次会把你往 ${blendMeta.secondaryPersonaName} 之外的当前人格上推的主要原因。`,
+    },
+    {
+      title: "混合倾向",
+      text: `这次不是纯单核判定。当前更像 ${personaMeta.display_name || personaMeta.tagline} 占 ${blendMeta.primaryPersonaShare}% ，${blendMeta.secondaryPersonaName} 占 ${blendMeta.secondaryPersonaShare}% 。${blendMeta.blendLabel}，答卷稳定度是 ${stabilityMeta.stabilityScore} / 100。`,
     },
     {
       title: "活到第几集",
@@ -776,12 +1072,31 @@ function encodeBase64Url(text) {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits) {
+function buildResultTokenPayload(
+  personaName,
+  brainlessIndex,
+  verdictLabel,
+  topDimensions,
+  hiddenHits,
+  confidenceMeta,
+  stabilityMeta,
+  blendMeta,
+) {
   return {
     v: "v1",
     p: personaName,
     b: brainlessIndex,
     l: verdictLabel,
+    c: confidenceMeta?.confidenceScore || 0,
+    cl: confidenceMeta?.confidenceLabel || "",
+    r: confidenceMeta?.runnerUpName || "",
+    g: confidenceMeta?.runnerUpGap || 0,
+    s: stabilityMeta?.stabilityScore || 0,
+    sl: stabilityMeta?.stabilityLabel || "",
+    sp: blendMeta?.secondaryPersonaName || "",
+    ps: blendMeta?.primaryPersonaShare || 0,
+    ss: blendMeta?.secondaryPersonaShare || 0,
+    bl: blendMeta?.blendLabel || "",
     d: topDimensions.map((item) => [item.name || item.dimension, item.score]),
     h: hiddenHits.map((item) => [item.name, item.score]),
   };
@@ -863,10 +1178,13 @@ function renderTags(container, values, variant) {
   });
 }
 
-function buildShareText(personaName, personaMeta, brainlessIndex, topDimensions) {
+function buildShareText(personaName, personaMeta, brainlessIndex, topDimensions, confidenceMeta, stabilityMeta, blendMeta) {
   return [
     `ZZTI 测试结果：${personaName}`,
     `脑残指数：${brainlessIndex}`,
+    `判定置信度：${confidenceMeta.confidenceScore} · ${confidenceMeta.confidenceLabel}`,
+    `答卷稳定度：${stabilityMeta.stabilityScore} · ${stabilityMeta.stabilityLabel}`,
+    `副人格倾向：${blendMeta.secondaryPersonaName}（${blendMeta.secondaryPersonaShare}%）`,
     `适配赛道：${personaMeta.genres.join(" / ")}`,
     `高频角色位：${personaMeta.roles.join(" / ")}`,
     `脑回路偏科：${topDimensions.map((item) => `${getDimensionDisplayLabel(item)}(${item.level})`).join(" / ")}`,
@@ -878,21 +1196,51 @@ function renderResult() {
   const dimensionScores = calculateDimensionScores();
   const dimensionRatings = buildDimensionRatings(dimensionScores);
   const brainlessIndex = calculateBrainlessIndex(dimensionScores);
-  const personaKey = pickPersona(dimensionScores);
+  const personaRanking = rankPersonas(dimensionScores);
+  const personaKey = personaRanking[0]?.name || pickPersona(dimensionScores);
   const personaMeta = PERSONA_LIBRARY[personaKey];
   const personaName = personaMeta.display_name || personaKey;
   const verdictLabel = getVerdictLabel(brainlessIndex);
   const topDimensions = getTopDimensions(dimensionScores);
   const hiddenHits = [];
-  const detailedAnalysis = buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings);
-  const resultTokenPayload = buildResultTokenPayload(personaName, brainlessIndex, verdictLabel, topDimensions, hiddenHits);
+  const stabilityMeta = buildAnswerStability(state.answers, dimensionScores);
+  const confidenceMeta = buildConfidenceScore(personaRanking, personaMeta, dimensionScores, topDimensions);
+  confidenceMeta.confidenceScore = clamp(
+    Math.round(confidenceMeta.confidenceScore + (stabilityMeta.stabilityScore - 60) * 0.22),
+    28,
+    98,
+  );
+  confidenceMeta.confidenceLabel = getConfidenceLabel(confidenceMeta.confidenceScore);
+  const blendMeta = buildBlendMeta(personaRanking);
+  const answerEvidence = buildAnswerEvidence(state.answers, personaMeta, topDimensions);
+  const detailedAnalysis = buildDetailedAnalysis(
+    personaMeta,
+    brainlessIndex,
+    topDimensions,
+    dimensionRatings,
+    confidenceMeta,
+    stabilityMeta,
+    blendMeta,
+    answerEvidence,
+  );
+  const resultTokenPayload = buildResultTokenPayload(
+    personaName,
+    brainlessIndex,
+    verdictLabel,
+    topDimensions,
+    hiddenHits,
+    confidenceMeta,
+    stabilityMeta,
+    blendMeta,
+  );
   const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
   const posterCommand = buildPosterCommand(resultToken);
   const personaAsset = personaMeta.asset || "./assets/deco-art.svg";
   const personaCaption = `${personaName} · ${personaMeta.result_comment || personaMeta.quote}`;
+  const evidenceDigest = buildEvidenceDigest(answerEvidence);
 
   dom.resultTitle.textContent = `你是【${personaName}】`;
-  dom.resultSubtitle.textContent = personaMeta.result_intro || `很不幸，${personaMeta.tagline}`;
+  dom.resultSubtitle.textContent = `${personaMeta.result_intro || `很不幸，${personaMeta.tagline}`}这次结果不是单点硬判，旁边还挂着邻近人格和置信度。`;
   dom.posterTitle.textContent = personaName;
   dom.posterAnalysis.innerHTML = detailedAnalysis
     .map(
@@ -909,6 +1257,10 @@ function renderResult() {
   dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = buildVerdictSummary(personaMeta, topDimensions, dimensionRatings);
+  dom.resultConfidence.textContent = `${confidenceMeta.confidenceScore} / 100 · ${confidenceMeta.confidenceLabel}`;
+  dom.resultStability.textContent = `${stabilityMeta.stabilityScore} / 100 · ${stabilityMeta.stabilityLabel}`;
+  dom.resultNeighbor.textContent = `${blendMeta.secondaryPersonaName} · ${blendMeta.secondaryPersonaShare}%`;
+  dom.resultEvidence.textContent = evidenceDigest;
   dom.resultQuote.textContent = `弹幕：${personaMeta.result_comment || personaMeta.quote}`;
   dom.bridgeNote.textContent = "网页里只负责点题。点“回飞书出图”后，会优先帮你复制口令；如果浏览器支持分享，会直接拉起分享；不支持就自己切回飞书粘贴发送。";
   dom.personaFigureImage.src = personaAsset;
@@ -927,7 +1279,9 @@ function renderResult() {
 
   dom.copyButton.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(buildShareText(personaName, personaMeta, brainlessIndex, topDimensions));
+      await navigator.clipboard.writeText(
+        buildShareText(personaName, personaMeta, brainlessIndex, topDimensions, confidenceMeta, stabilityMeta, blendMeta),
+      );
       dom.copyButton.textContent = "已复制";
       window.setTimeout(() => {
         dom.copyButton.textContent = "复制结果";
