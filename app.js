@@ -791,6 +791,38 @@ function buildPosterCommand(resultToken) {
   return `给 zzti 生结果图：${resultToken}`;
 }
 
+async function handoffPosterCommand(commandText) {
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(commandText);
+    copied = true;
+  } catch (error) {
+    copied = false;
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "ZZTI 结果图口令",
+        text: commandText,
+      });
+      return "shared";
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        return copied ? "copied" : "cancelled";
+      }
+    }
+  }
+
+  window.setTimeout(() => {
+    if (window.history.length > 1) {
+      window.history.back();
+    }
+  }, 120);
+
+  return copied ? "copied" : "failed";
+}
+
 function renderDimensionList(dimensionRatings) {
   dom.dimensionList.innerHTML = "";
   [...dimensionRatings]
@@ -878,7 +910,7 @@ function renderResult() {
   dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
   dom.resultVerdict.textContent = buildVerdictSummary(personaMeta, topDimensions, dimensionRatings);
   dom.resultQuote.textContent = `弹幕：${personaMeta.result_comment || personaMeta.quote}`;
-  dom.bridgeNote.textContent = "网页测完后，点“生成结果图口令”，再把这段口令贴回飞书里的 OpenClaw，ZZTI 就会调 Wan2.7 生图。";
+  dom.bridgeNote.textContent = "网页里只负责点题。点“回飞书出图”后，会优先帮你复制口令；如果浏览器支持分享，会直接拉起分享；不支持就自己切回飞书粘贴发送。";
   dom.personaFigureImage.src = personaAsset;
   dom.personaFigureImage.alt = `${personaName} 角色形象图`;
   dom.personaFigureHint.textContent = `点击放大 ${personaName} 角色形象`;
@@ -909,18 +941,25 @@ function renderResult() {
   };
 
   dom.posterButton.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(posterCommand);
-      dom.posterButton.textContent = "口令已复制";
+    const status = await handoffPosterCommand(posterCommand);
+    if (status === "shared") {
+      dom.posterButton.textContent = "已调起分享";
       window.setTimeout(() => {
-        dom.posterButton.textContent = "生成结果图口令";
+        dom.posterButton.textContent = "回飞书出图";
       }, 1400);
-    } catch (error) {
-      dom.posterButton.textContent = "复制失败";
-      window.setTimeout(() => {
-        dom.posterButton.textContent = "生成结果图口令";
-      }, 1400);
+      return;
     }
+    if (status === "copied") {
+      dom.posterButton.textContent = "已复制，回飞书";
+      window.setTimeout(() => {
+        dom.posterButton.textContent = "回飞书出图";
+      }, 1600);
+      return;
+    }
+    dom.posterButton.textContent = "复制失败";
+    window.setTimeout(() => {
+      dom.posterButton.textContent = "回飞书出图";
+    }, 1400);
   };
 
   showSection("result");
