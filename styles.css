@@ -65,9 +65,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.25rem;
   background: rgba(255, 250, 242, 0.92);
@@ -81,7 +81,7 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: flex-start;
   text-decoration: none;
   color: inherit;
 }
@@ -103,6 +103,35 @@ body {
 
 .brand-text {
   display: none;
+}
+
+.masthead-copy {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.masthead-title,
+.masthead-subtitle {
+  margin: 0;
+}
+
+.masthead-title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.08em;
+  text-transform: uppercase;
+  transform: skewX(-14deg);
+}
+
+.masthead-subtitle {
+  max-width: 34rem;
+  font-size: 0.96rem;
+  line-height: 1.35;
+  font-weight: 700;
 }
 
 .header-actions {
@@ -217,14 +246,11 @@ body {
   border: 5px solid var(--ink);
   box-shadow: 10px 10px 0 0 var(--shadow);
   overflow: hidden;
-  background: #fff;
-}
-
-.hero-art-image {
-  display: block;
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.82)),
+    radial-gradient(circle at 12% 20%, rgba(255, 216, 77, 0.28) 0 14%, transparent 14.5%),
+    radial-gradient(circle at 84% 22%, rgba(255, 90, 54, 0.18) 0 12%, transparent 12.5%),
+    #fff7e7;
 }
 
 .hero-title-overlay {
@@ -236,6 +262,22 @@ body {
   align-items: flex-start;
   gap: 0.7rem;
   padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+.hero-title-overlay-static {
+  position: relative;
+  inset: auto;
+  min-height: 320px;
+  justify-content: center;
+}
+
+.hero-lede {
+  margin: 0;
+  max-width: 14ch;
+  font-size: clamp(2.3rem, 5vw, 4.2rem);
+  line-height: 1.02;
+  font-weight: 900;
+  letter-spacing: 0.01em;
 }
 
 .hero-subcopy {
@@ -317,22 +359,6 @@ body {
   display: grid;
   gap: 1rem;
   align-content: start;
-}
-
-.art-card {
-  margin: 0;
-  border: 4px solid var(--ink);
-  background: #fff;
-  box-shadow: 8px 8px 0 0 var(--shadow);
-  overflow: hidden;
-  transform: rotate(1.4deg);
-}
-
-.art-image {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
 }
 
 .sticker-card {
@@ -518,7 +544,7 @@ body {
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
   box-shadow: 4px 4px 0 0 var(--shadow);
 }
 
@@ -534,20 +560,21 @@ body {
 .question-kicker {
   margin: 0 0 0.75rem;
   font-family: var(--mono);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  text-transform: none;
 }
 
 .question-title {
   margin: 0;
-  font-size: clamp(1.8rem, 4vw, 3.1rem);
-  line-height: 1.18;
+  font-size: clamp(1.55rem, 3.5vw, 2.8rem);
+  line-height: 1.28;
   font-weight: 800;
 }
 
 .options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -596,6 +623,10 @@ body {
 .option-card:nth-child(3) .option-key {
   background: var(--hot);
   color: #fff;
+}
+
+.option-card:nth-child(4) .option-key {
+  background: var(--blue);
 }
 
 .option-text {
@@ -861,10 +892,29 @@ body {
 .site-footer {
   padding: 1.3rem 1.5rem 3rem;
   text-align: center;
-  font-family: var(--mono);
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
+}
+
+.footer-mark,
+.footer-copy {
+  margin: 0;
+}
+
+.footer-mark {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 2.4rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.08em;
   text-transform: uppercase;
+  transform: skewX(-14deg);
+}
+
+.footer-copy {
+  margin-top: 0.35rem;
+  font-family: var(--body);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 700;
 }
 
 @media (max-width: 960px) {
@@ -880,11 +930,24 @@ body {
   .poster-layout {
     grid-template-columns: 1fr;
   }
+
+  .site-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 720px) {
   .site-header {
     padding: 0.9rem 0.85rem;
+  }
+
+  .hero-title-overlay-static {
+    min-height: 260px;
   }
 
   .page-shell {
