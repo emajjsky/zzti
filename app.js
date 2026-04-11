@@ -1,236 +1,22 @@
 const QUESTION_BANK_URL = "./data/question-bank.v1.json";
+const MODEL_CONFIG_URL = "./data/model-config.v1.json";
+const ACTIVE_PROFILE = "full";
+const RESULT_TOKEN_PREFIX = "ZZTI_PAYLOAD::";
 
-const PROFILE_CONFIG = {
+let PROFILE_CONFIG = {
   quick: { core: 23, calibration: 7, antiConflict: 3, hidden: 2 },
   standard: { core: 26, calibration: 8, antiConflict: 4, hidden: 2 },
   full: { core: 32, calibration: 10, antiConflict: 5, hidden: 3 },
 };
 
-const ACTIVE_PROFILE = "full";
-
-const DIMENSION_ORDER = [
-  "上头度",
-  "恋爱脑度",
-  "装逼度",
-  "复读度",
-  "刻薄度",
-  "降智度",
-  "做局度",
-  "掉马妄想度",
-];
-
-const BRAINLESS_WEIGHTS = {
-  上头度: 0.15,
-  恋爱脑度: 0.18,
-  装逼度: 0.12,
-  复读度: 0.14,
-  刻薄度: 0.08,
-  降智度: 0.2,
-  做局度: -0.12,
-  掉马妄想度: 0.25,
-};
-
-const PERSONA_LIBRARY = {
-  接绿活佛: {
-    tagline: "烂人只要一掉眼泪，你就忍不住开始给他找补。",
-    verdict: "你最擅长的不是谈恋爱，是替烂剧情补锅。别人看见绿光会跑，你看见绿光会想：说不定是角度问题。",
-    quote: "他爱她没关系，只要最后愿意回来，这个家我还能撑。",
-    genres: ["现代女频", "都市男频", "家庭伦理"],
-    roles: ["冤种赘婿", "苦主原配", "深情替身"],
-    targets: { 上头度: 58, 恋爱脑度: 96, 装逼度: 25, 复读度: 38, 刻薄度: 24, 降智度: 84, 做局度: 18, 掉马妄想度: 22 },
-    primary: ["恋爱脑度", "降智度"],
-    secondary: ["上头度"],
-  },
-  歪嘴抄家: {
-    tagline: "手里牌未必够，嘴里台词一定满。",
-    verdict: "你的人生驱动力不是赢，而是让所有人知道你早晚会赢。哪怕底牌还没掏出来，狠话也得先开场白一样甩满。",
-    quote: "三分钟，我要看到他们全家排队给我道歉。",
-    genres: ["都市男频", "修仙玄幻", "古装权谋"],
-    roles: ["龙王", "战神", "退婚流天才"],
-    targets: { 上头度: 68, 恋爱脑度: 18, 装逼度: 96, 复读度: 20, 刻薄度: 42, 降智度: 52, 做局度: 28, 掉马妄想度: 92 },
-    primary: ["装逼度", "掉马妄想度"],
-    secondary: ["上头度"],
-  },
-  帮腔喇叭: {
-    tagline: "谁喊得大声，你就替谁扩音。",
-    verdict: "你不是来判断真相的，你是来把别人的情绪做成立体环绕声的。全场要是缺个帮腔位，你永远第一个补上。",
-    quote: "你说得都对，我再帮你重复一遍让她听清楚。",
-    genres: ["家庭伦理", "现代女频", "古装权谋"],
-    roles: ["路人甲", "亲戚嘴替", "朝堂跟风官"],
-    targets: { 上头度: 42, 恋爱脑度: 28, 装逼度: 18, 复读度: 95, 刻薄度: 48, 降智度: 82, 做局度: 12, 掉马妄想度: 44 },
-    primary: ["复读度", "降智度"],
-    secondary: ["刻薄度"],
-  },
-  验资门神: {
-    tagline: "先验资，再验门第，最后验你配不配喘气。",
-    verdict: "你对人的第一反应不是了解，是筛选。你特别擅长把偏见说得像规矩，把羞辱包装成长辈经验。",
-    quote: "钱都摆不上桌，还想跟我谈尊重？",
-    genres: ["现代女频", "家庭伦理", "古装权谋"],
-    roles: ["恶婆婆", "丈母娘", "主母"],
-    targets: { 上头度: 38, 恋爱脑度: 12, 装逼度: 44, 复读度: 40, 刻薄度: 96, 降智度: 62, 做局度: 26, 掉马妄想度: 20 },
-    primary: ["刻薄度"],
-    secondary: ["降智度", "复读度"],
-  },
-  跪舔罗盘: {
-    tagline: "哪边风大你跪哪边，永远精准导航。",
-    verdict: "你没有原则，但你有方向感。场上只要出现一个更强的人，你就会像指南针一样自动转过去。",
-    quote: "哥你说得对，我刚才站错边了，现在我重新跪。",
-    genres: ["都市男频", "古装权谋", "家庭伦理"],
-    roles: ["小舅子", "狗腿秘书", "家奴跟班"],
-    targets: { 上头度: 34, 恋爱脑度: 20, 装逼度: 16, 复读度: 84, 刻薄度: 58, 降智度: 76, 做局度: 18, 掉马妄想度: 18 },
-    primary: ["复读度"],
-    secondary: ["刻薄度", "降智度"],
-  },
-  掀桌疯狗: {
-    tagline: "气一上头，桌子和关系都得一起飞。",
-    verdict: "你处理冲突的方式不是化解，是引爆。只要那口气过不去，后果、台阶、体面都能先往后稍稍。",
-    quote: "今天谁都别活，先让我把这桌掀干净。",
-    genres: ["现代女频", "都市男频", "修仙玄幻"],
-    roles: ["疯批女配", "暴走前任", "热血少爷"],
-    targets: { 上头度: 97, 恋爱脑度: 30, 装逼度: 58, 复读度: 18, 刻薄度: 52, 降智度: 72, 做局度: 12, 掉马妄想度: 34 },
-    primary: ["上头度"],
-    secondary: ["装逼度", "降智度"],
-  },
-  录音黑莲: {
-    tagline: "脸上在笑，口袋里已经按下录音键。",
-    verdict: "你不急着赢第一回合，你急着赢大结局。别人靠吵，你靠留证和做局，专挑全员到齐的时候下手。",
-    quote: "姐姐别急，我录着呢，等人齐了再一块听。",
-    genres: ["现代女频", "古装权谋", "穿越重生"],
-    roles: ["真千金", "复仇前妻", "毒士嫡女"],
-    targets: { 上头度: 26, 恋爱脑度: 20, 装逼度: 34, 复读度: 18, 刻薄度: 52, 降智度: 18, 做局度: 97, 掉马妄想度: 56 },
-    primary: ["做局度"],
-    secondary: ["刻薄度", "掉马妄想度"],
-  },
-  龙王癔症: {
-    tagline: "普通日子你活不进去，非得脑补成掉马现场。",
-    verdict: "你不是非要解决问题，你是非要让问题长出一个‘其实我是龙王’的尾巴。没有身份反转，你会觉得戏不完整。",
-    quote: "他们笑我现在，等会儿就该跪着叫我爷。",
-    genres: ["都市男频", "现代女频", "修仙玄幻"],
-    roles: ["真少爷", "龙王", "隐藏血脉"],
-    targets: { 上头度: 48, 恋爱脑度: 18, 装逼度: 82, 复读度: 18, 刻薄度: 30, 降智度: 58, 做局度: 22, 掉马妄想度: 98 },
-    primary: ["掉马妄想度"],
-    secondary: ["装逼度", "降智度"],
-  },
-  系统走狗: {
-    tagline: "没了外挂提示，你整个人就像掉线。",
-    verdict: "你不是没有主见，你是把主见外包给了系统、提示框和奖励清单。奖励一响，脑子就自动下班。",
-    quote: "统子别废话，直接告诉我跪哪儿能赚最多。",
-    genres: ["穿越重生", "修仙玄幻", "现代女频"],
-    roles: ["系统宿主", "快穿执行者", "签到工具人"],
-    targets: { 上头度: 58, 恋爱脑度: 26, 装逼度: 26, 复读度: 26, 刻薄度: 18, 降智度: 94, 做局度: 22, 掉马妄想度: 72 },
-    primary: ["降智度"],
-    secondary: ["掉马妄想度", "上头度"],
-  },
-  后仰喇叭: {
-    tagline: "你的人生职责就是替全场把‘卧槽’喊出来。",
-    verdict: "你不一定会做事，但你特别会放大别人做出来的事。别人掉马，你负责惊呼；别人翻盘，你负责把氛围烘到天花板。",
-    quote: "卧槽他真是？我就说这人不简单！",
-    genres: ["现代女频", "都市男频", "古装权谋"],
-    roles: ["吃瓜群众", "宫宴嘴替", "围观同事"],
-    targets: { 上头度: 46, 恋爱脑度: 16, 装逼度: 18, 复读度: 82, 刻薄度: 26, 降智度: 70, 做局度: 12, 掉马妄想度: 62 },
-    primary: ["复读度"],
-    secondary: ["掉马妄想度", "降智度"],
-  },
-  装孙军师: {
-    tagline: "你不是怂，你是习惯把仇算到结尾。",
-    verdict: "你很清楚什么叫先活着、先苟住、先让子弹飞一会儿。别人把隐忍当窝囊，你把隐忍当复仇理财。",
-    quote: "先忍到大结局，利息我一分都不会少收。",
-    genres: ["古装权谋", "都市男频", "修仙玄幻"],
-    roles: ["军师", "庶子", "苟王师兄"],
-    targets: { 上头度: 18, 恋爱脑度: 16, 装逼度: 24, 复读度: 18, 刻薄度: 28, 降智度: 12, 做局度: 95, 掉马妄想度: 52 },
-    primary: ["做局度"],
-    secondary: ["上头度", "降智度"],
-  },
-  巴掌阎王: {
-    tagline: "一巴掌一旧账，打的不是脸，是总账。",
-    verdict: "你不信和解，也不爱轻拿轻放。你最上头的不是冲突本身，而是那种‘今天必须把账结完’的极端快感。",
-    quote: "这一巴掌只是利息，本金我还没开始念。",
-    genres: ["现代女频", "都市男频", "穿越重生"],
-    roles: ["复仇女主", "狠人老板", "黑化主角"],
-    targets: { 上头度: 86, 恋爱脑度: 12, 装逼度: 40, 复读度: 12, 刻薄度: 68, 降智度: 30, 做局度: 74, 掉马妄想度: 28 },
-    primary: ["上头度", "做局度"],
-    secondary: ["刻薄度"],
-  },
-  白月光免罪牌: {
-    tagline: "别人犯错你审判，白月光犯错你写谅解书。",
-    verdict: "你对白月光的滤镜已经不是滤镜，是特赦令。只要冠上旧爱、初恋、白月光，你的判断就会自动打折。",
-    quote: "她不是故意的，她只是太重要了。",
-    genres: ["现代女频", "都市男频", "穿越重生"],
-    roles: ["归国白月光", "旧爱插队怪", "滤镜苦主"],
-    targets: { 上头度: 42, 恋爱脑度: 90, 装逼度: 20, 复读度: 18, 刻薄度: 50, 降智度: 76, 做局度: 18, 掉马妄想度: 34 },
-    primary: ["恋爱脑度"],
-    secondary: ["降智度", "刻薄度"],
-  },
-  退婚回旋镖: {
-    tagline: "你活着就为那句‘当年你看不起我’。",
-    verdict: "你的人生必须先被踩脸，再在同一批人面前封神。没有退婚、看不起、回踩、跪求这套回旋镖流程，你都觉得不够爽。",
-    quote: "当年你退婚，今天你排队后悔。",
-    genres: ["修仙玄幻", "都市男频", "现代女频"],
-    roles: ["退婚流天才", "打脸真千金", "逆袭前任"],
-    targets: { 上头度: 68, 恋爱脑度: 12, 装逼度: 86, 复读度: 16, 刻薄度: 34, 降智度: 40, 做局度: 32, 掉马妄想度: 88 },
-    primary: ["装逼度", "掉马妄想度"],
-    secondary: ["上头度"],
-  },
-  萌宝军火库: {
-    tagline: "你相信世界上每个大烂摊子都该靠神童幼崽收尾。",
-    verdict: "在你眼里，小孩不是小孩，是黑客、法务、DNA检测仪和情感谈判专家的合体。成年人的问题，你总想靠萌宝一键通关。",
-    quote: "妈咪别哭，我已经把监控和转账记录投屏了。",
-    genres: ["现代女频", "都市男频", "家庭伦理"],
-    roles: ["天才萌宝", "认亲雷达", "带球跑外挂"],
-    targets: { 上头度: 28, 恋爱脑度: 26, 装逼度: 22, 复读度: 18, 刻薄度: 18, 降智度: 84, 做局度: 50, 掉马妄想度: 88 },
-    primary: ["降智度", "掉马妄想度"],
-    secondary: ["做局度"],
-  },
-  认亲广播站: {
-    tagline: "一看到玉佩、胎记、旧照片，你嘴已经开始播报了。",
-    verdict: "你不是在看线索，你是在找认亲开关。真相还没出来，你已经替全场把‘原来她才是亲生的’喊成了广播站。",
-    quote: "卧槽我就知道，这人绝对不是普通路人。",
-    genres: ["现代女频", "古装权谋", "家庭伦理"],
-    roles: ["认亲嘴替", "宫宴起哄官", "族谱播报员"],
-    targets: { 上头度: 46, 恋爱脑度: 18, 装逼度: 24, 复读度: 84, 刻薄度: 24, 降智度: 82, 做局度: 12, 掉马妄想度: 92 },
-    primary: ["掉马妄想度", "复读度"],
-    secondary: ["降智度"],
-  },
-};
-
-const HIDDEN_LIBRARY = {
-  脑残编剧: {
-    title: "脑残编剧",
-    copy: "你已经不满足于看离谱剧情，你开始主动给离谱剧情加码。逻辑在你这里不是底线，是可删选项。",
-  },
-  红果综合症患者: {
-    title: "红果综合症患者",
-    copy: "你的大脑已经被掉马、打脸、认亲、反转训练成了条件反射系统。现实一旦不够狗血，你会自动失落。",
-  },
-};
-
-const RESULT_TOKEN_PREFIX = "ZZTI_PAYLOAD::";
-
-const PERSONA_DISPLAY_NAMES = {
-  接绿活佛: "旧情缓刑",
-  歪嘴抄家: "台词超前",
-  帮腔喇叭: "人形弹幕",
-  验资门神: "门槛光谱",
-  跪舔罗盘: "风向膝跳",
-  掀桌疯狗: "爆点过载",
-  录音黑莲: "证据囤积",
-  龙王癔症: "身份待机",
-  系统走狗: "弹窗托管",
-  后仰喇叭: "惊叹外放",
-  装孙军师: "后手月供",
-  巴掌阎王: "当场结算",
-  白月光免罪牌: "旧情特赦",
-  退婚回旋镖: "回踩预存",
-  萌宝军火库: "幼崽外包",
-  认亲广播站: "血缘雷达",
-};
-
-Object.entries(PERSONA_LIBRARY).forEach(([name, meta]) => {
-  meta.display_name = PERSONA_DISPLAY_NAMES[name] || name;
-});
+let DIMENSION_ORDER = [];
+let BRAINLESS_WEIGHTS = {};
+let PERSONA_LIBRARY = {};
+let HIDDEN_LIBRARY = {};
 
 const state = {
   bank: null,
+  model: null,
   paper: null,
   currentIndex: 0,
   answers: [],
@@ -289,57 +75,145 @@ function uniquePush(target, item, predicate) {
   }
 }
 
-function buildPaper(profile = "standard") {
-  const config = PROFILE_CONFIG[profile];
-  const coreQuestions = state.bank.core_questions;
-  const calibrationQuestions = state.bank.calibration_questions;
-  const hiddenQuestions = state.bank.hidden_trigger_questions;
+function primaryDimension(question) {
+  const dimensions = question.primary_dimensions || [];
+  if (dimensions.length) {
+    return dimensions[0];
+  }
+  return question.dimension || "未分类";
+}
 
-  const byPersona = {};
+function sceneCluster(question) {
+  return question.scene_cluster || "通用场景";
+}
+
+function chooseCore(coreQuestions, count) {
+  const byDimension = {};
   coreQuestions.forEach((question) => {
-    if (!byPersona[question.persona_id]) {
-      byPersona[question.persona_id] = [];
+    const dimension = primaryDimension(question);
+    if (!byDimension[dimension]) {
+      byDimension[dimension] = [];
     }
-    byPersona[question.persona_id].push(question);
+    byDimension[dimension].push(question);
   });
 
-  const selectedCore = [];
+  const selected = [];
+  const selectedIds = new Set();
   const usedScenarios = new Set();
-  const personaIds = shuffle(Object.keys(byPersona));
-  personaIds.forEach((personaId) => {
-    if (selectedCore.length < config.core) {
-      const candidate = shuffle(byPersona[personaId]).find((item) => !usedScenarios.has(item.scenario_id || item.id));
-      if (candidate) {
-        selectedCore.push(candidate);
-        usedScenarios.add(candidate.scenario_id || candidate.id);
+
+  const addIfPossible = (question) => {
+    const scenarioId = question.scenario_id || question.id;
+    if (selectedIds.has(question.id) || usedScenarios.has(scenarioId)) {
+      return false;
+    }
+    selected.push(question);
+    selectedIds.add(question.id);
+    usedScenarios.add(scenarioId);
+    return true;
+  };
+
+  shuffle(Object.keys(byDimension)).forEach((dimension) => {
+    if (selected.length >= count) {
+      return;
+    }
+    const pool = shuffle(byDimension[dimension]);
+    const candidate = pool.find((item) => !usedScenarios.has(item.scenario_id || item.id));
+    if (candidate) {
+      addIfPossible(candidate);
+    }
+  });
+
+  const allGenres = shuffle([...new Set(coreQuestions.map((question) => question.genre || "通用剧情"))]);
+  allGenres.forEach((genre) => {
+    if (selected.length >= count) {
+      return;
+    }
+    if (selected.some((item) => (item.genre || "通用剧情") === genre)) {
+      return;
+    }
+    const pool = shuffle(coreQuestions.filter((question) => (question.genre || "通用剧情") === genre));
+    pool.some((question) => addIfPossible(question));
+  });
+
+  const allClusters = shuffle([...new Set(coreQuestions.map((question) => sceneCluster(question)))]);
+  allClusters.forEach((cluster) => {
+    if (selected.length >= count) {
+      return;
+    }
+    if (selected.some((item) => sceneCluster(item) === cluster)) {
+      return;
+    }
+    const pool = shuffle(coreQuestions.filter((question) => sceneCluster(question) === cluster));
+    pool.some((question) => addIfPossible(question));
+  });
+
+  const dimensionCounts = {};
+  const genreCounts = {};
+  const clusterCounts = {};
+  selected.forEach((question) => {
+    const dimension = primaryDimension(question);
+    const genre = question.genre || "通用剧情";
+    const cluster = sceneCluster(question);
+    dimensionCounts[dimension] = (dimensionCounts[dimension] || 0) + 1;
+    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+  });
+
+  const remainingPool = shuffle(coreQuestions).sort((left, right) => {
+    const leftKey = [
+      dimensionCounts[primaryDimension(left)] || 0,
+      genreCounts[left.genre || "通用剧情"] || 0,
+      clusterCounts[sceneCluster(left)] || 0,
+    ];
+    const rightKey = [
+      dimensionCounts[primaryDimension(right)] || 0,
+      genreCounts[right.genre || "通用剧情"] || 0,
+      clusterCounts[sceneCluster(right)] || 0,
+    ];
+    for (let index = 0; index < leftKey.length; index += 1) {
+      if (leftKey[index] !== rightKey[index]) {
+        return leftKey[index] - rightKey[index];
       }
     }
+    return 0;
   });
 
-  const personaCount = {};
-  selectedCore.forEach((question) => {
-    personaCount[question.persona_id] = (personaCount[question.persona_id] || 0) + 1;
+  remainingPool.forEach((question) => {
+    if (selected.length >= count) {
+      return;
+    }
+    const dimension = primaryDimension(question);
+    const genre = question.genre || "通用剧情";
+    const cluster = sceneCluster(question);
+    if ((dimensionCounts[dimension] || 0) >= 3) {
+      return;
+    }
+    if ((genreCounts[genre] || 0) >= 5) {
+      return;
+    }
+    if ((clusterCounts[cluster] || 0) >= 5) {
+      return;
+    }
+    if (!addIfPossible(question)) {
+      return;
+    }
+    dimensionCounts[dimension] = (dimensionCounts[dimension] || 0) + 1;
+    genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
   });
 
-  shuffle(coreQuestions).forEach((question) => {
-    if (selectedCore.length >= config.core) {
-      return;
-    }
-    if (selectedCore.some((item) => item.id === question.id)) {
-      return;
-    }
-    if ((personaCount[question.persona_id] || 0) >= 4) {
-      return;
-    }
-    const scenarioId = question.scenario_id || question.id;
-    if (usedScenarios.has(scenarioId)) {
-      return;
-    }
-    selectedCore.push(question);
-    personaCount[question.persona_id] = (personaCount[question.persona_id] || 0) + 1;
-    usedScenarios.add(scenarioId);
-  });
+  if (selected.length < count) {
+    shuffle(coreQuestions).forEach((question) => {
+      if (selected.length < count) {
+        addIfPossible(question);
+      }
+    });
+  }
 
+  return selected;
+}
+
+function chooseCalibration(calibrationQuestions, count, antiConflictCount) {
   const antiConflictPool = calibrationQuestions.filter((question) => question.subtype === "anti_conflict");
   const generalCalibrationPool = calibrationQuestions.filter((question) => question.subtype !== "anti_conflict");
 
@@ -352,14 +226,14 @@ function buildPaper(profile = "standard") {
     calibrationByDimension[question.dimension].push(question);
   });
 
-  Object.keys(calibrationByDimension).forEach((dimension) => {
-    if (selectedCalibration.length < config.calibration) {
+  shuffle(Object.keys(calibrationByDimension)).forEach((dimension) => {
+    if (selectedCalibration.length < count) {
       selectedCalibration.push(shuffle(calibrationByDimension[dimension])[0]);
     }
   });
 
   shuffle(generalCalibrationPool).forEach((question) => {
-    if (selectedCalibration.length < config.calibration) {
+    if (selectedCalibration.length < count) {
       uniquePush(selectedCalibration, question, (item) => item.id === question.id);
     }
   });
@@ -374,17 +248,21 @@ function buildPaper(profile = "standard") {
   });
 
   shuffle(Object.keys(antiByDimension)).forEach((dimension) => {
-    if (selectedAntiConflict.length < config.antiConflict) {
+    if (selectedAntiConflict.length < antiConflictCount) {
       selectedAntiConflict.push(shuffle(antiByDimension[dimension])[0]);
     }
   });
 
   shuffle(antiConflictPool).forEach((question) => {
-    if (selectedAntiConflict.length < config.antiConflict) {
+    if (selectedAntiConflict.length < antiConflictCount) {
       uniquePush(selectedAntiConflict, question, (item) => item.id === question.id);
     }
   });
 
+  return { selectedCalibration, selectedAntiConflict };
+}
+
+function chooseHidden(hiddenQuestions, count) {
   const selectedHidden = [];
   const hiddenByTarget = {};
   hiddenQuestions.forEach((question) => {
@@ -395,27 +273,41 @@ function buildPaper(profile = "standard") {
   });
 
   Object.keys(hiddenByTarget).forEach((target) => {
-    if (selectedHidden.length < config.hidden) {
+    if (selectedHidden.length < count) {
       selectedHidden.push(shuffle(hiddenByTarget[target])[0]);
     }
   });
 
   shuffle(hiddenQuestions).forEach((question) => {
-    if (selectedHidden.length < config.hidden) {
+    if (selectedHidden.length < count) {
       uniquePush(selectedHidden, question, (item) => item.id === question.id);
     }
   });
 
-  const questions = shuffle([
-    ...selectedCore,
-    ...selectedCalibration,
-    ...selectedAntiConflict,
-    ...selectedHidden,
-  ]);
+  return selectedHidden;
+}
+
+function buildPaper(profile = "standard") {
+  const config = PROFILE_CONFIG[profile];
+  const coreQuestions = state.bank.core_questions;
+  const calibrationQuestions = state.bank.calibration_questions;
+  const hiddenQuestions = state.bank.hidden_trigger_questions;
+  const selectedCore = chooseCore(coreQuestions, config.core);
+  const { selectedCalibration, selectedAntiConflict } = chooseCalibration(
+    calibrationQuestions,
+    config.calibration,
+    config.antiConflict,
+  );
+  const selectedHidden = chooseHidden(hiddenQuestions, config.hidden);
 
   return {
     profile,
-    questions,
+    questions: shuffle([
+      ...selectedCore,
+      ...selectedCalibration,
+      ...selectedAntiConflict,
+      ...selectedHidden,
+    ]),
   };
 }
 
@@ -425,14 +317,13 @@ function getProfileQuestionCount(profile) {
 }
 
 function updateStartButton() {
-  if (!state.bank) {
+  if (!state.bank || !state.model) {
     dom.startButton.disabled = true;
     if (dom.startButton.textContent !== "题库加载失败") {
       dom.startButton.textContent = "题库加载中...";
     }
     return;
   }
-
   dom.startButton.disabled = false;
   dom.startButton.textContent = `开始发疯测试 · ${getProfileQuestionCount(ACTIVE_PROFILE)}题`;
 }
@@ -480,7 +371,7 @@ function getQuestionKicker(question) {
   if (question.question_type === "hidden_trigger") {
     return "这题在看你到底是不是已经被狗血桥段训练成了条件反射。";
   }
-  return `这题做日常校准，主要量你在 ${question.dimension} 这条线上到底会不会失守。`;
+  return `这题做日常校准，主要量你在 ${question.dimension || "一致性"} 这条线上到底会不会失守。`;
 }
 
 function showSection(section) {
@@ -506,7 +397,7 @@ function renderQuestion() {
   dom.questionCounter.textContent = `第 ${state.currentIndex + 1} / ${total} 题`;
   dom.questionType.textContent = getQuestionTypeLabel(question);
   dom.progressFill.style.width = `${progress}%`;
-  dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round(((state.currentIndex) / total) * 100))}%`;
+  dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
   dom.questionGenre.textContent = getQuestionSceneLabel(question);
   dom.questionSource.textContent = getQuestionConflictLabel(question);
   dom.questionKicker.textContent = getQuestionKicker(question);
@@ -519,10 +410,7 @@ function renderQuestion() {
     button.type = "button";
     button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-text">${option.text}</span>`;
     button.addEventListener("click", () => {
-      state.answers.push({
-        question,
-        option,
-      });
+      state.answers.push({ question, option });
       if (state.currentIndex === total - 1) {
         renderResult();
       } else {
@@ -602,14 +490,12 @@ function calculateHiddenScores() {
 function calculateBrainlessIndex(dimensionScores) {
   let weightedSum = 0;
   let totalWeight = 0;
-
   Object.entries(BRAINLESS_WEIGHTS).forEach(([dimension, weight]) => {
     const score = dimensionScores[dimension] ?? 50;
     const effectiveScore = weight >= 0 ? score : 100 - score;
     weightedSum += Math.abs(weight) * effectiveScore;
     totalWeight += Math.abs(weight);
   });
-
   return Math.round(weightedSum / totalWeight);
 }
 
@@ -617,9 +503,9 @@ function personaAffinity(meta, dimensionScores) {
   return DIMENSION_ORDER.reduce((sum, dimension) => {
     const target = meta.targets[dimension] ?? 50;
     let importance = 0.55;
-    if (meta.primary.includes(dimension)) {
+    if ((meta.primary || []).includes(dimension)) {
       importance = 1.8;
-    } else if (meta.secondary.includes(dimension)) {
+    } else if ((meta.secondary || []).includes(dimension)) {
       importance = 1.1;
     }
     const similarity = 100 - Math.abs((dimensionScores[dimension] ?? 50) - target);
@@ -675,7 +561,7 @@ function buildSampleCode(personaName, brainlessIndex) {
 
 function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
   const dimensionText = topDimensions.map((item) => `${item.dimension}${item.score}`).join(" / ");
-  return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲玉佩都会自动坐直的程度。`;
+  return `你的脑子最爱在 ${dimensionText} 这几处集体塌方。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
 }
 
 function getHiddenHits(hiddenScores, threshold = 70) {
@@ -744,10 +630,8 @@ function buildShareText(personaName, personaMeta, brainlessIndex) {
     `脑残指数：${brainlessIndex}`,
     `适配赛道：${personaMeta.genres.join(" / ")}`,
     `高频角色位：${personaMeta.roles.join(" / ")}`,
-    `诊断结论：脑子已经被短剧腌透了`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+    "诊断结论：脑子已经被短剧腌透了",
+  ].join("\n");
 }
 
 function renderResult() {
@@ -785,9 +669,8 @@ function renderResult() {
   renderTags(dom.roleTags, personaMeta.roles);
 
   dom.copyButton.onclick = async () => {
-    const text = buildShareText(personaName, personaMeta, brainlessIndex);
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(buildShareText(personaName, personaMeta, brainlessIndex));
       dom.copyButton.textContent = "已复制";
       window.setTimeout(() => {
         dom.copyButton.textContent = "复制结果";
@@ -819,13 +702,46 @@ function renderResult() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-async function loadBank() {
+function applyModelConfig(model) {
+  state.model = model;
+  DIMENSION_ORDER = model.dimensions || [];
+  BRAINLESS_WEIGHTS = model.brainless_weights || {};
+  PERSONA_LIBRARY = model.persona_library || {};
+  HIDDEN_LIBRARY = model.hidden_library || {};
+}
+
+function applyProfileConfig(bank) {
+  if (!bank.selection_profiles) {
+    return;
+  }
+  PROFILE_CONFIG = Object.fromEntries(
+    Object.entries(bank.selection_profiles).map(([profile, cfg]) => [
+      profile,
+      {
+        core: cfg.core,
+        calibration: cfg.calibration,
+        antiConflict: cfg.anti_conflict,
+        hidden: cfg.hidden,
+      },
+    ]),
+  );
+}
+
+async function loadResources() {
   try {
-    const response = await fetch(QUESTION_BANK_URL);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    const [bankResponse, modelResponse] = await Promise.all([
+      fetch(QUESTION_BANK_URL),
+      fetch(MODEL_CONFIG_URL),
+    ]);
+    if (!bankResponse.ok) {
+      throw new Error(`question bank HTTP ${bankResponse.status}`);
     }
-    state.bank = await response.json();
+    if (!modelResponse.ok) {
+      throw new Error(`model config HTTP ${modelResponse.status}`);
+    }
+    state.bank = await bankResponse.json();
+    applyProfileConfig(state.bank);
+    applyModelConfig(await modelResponse.json());
     updateStartButton();
     dom.loadStatus.textContent = "";
     dom.loadStatus.classList.add("is-hidden");
@@ -839,7 +755,7 @@ async function loadBank() {
 
 function bindEvents() {
   dom.startButton.addEventListener("click", () => {
-    if (!state.bank) {
+    if (!state.bank || !state.model) {
       return;
     }
     startTest();
@@ -857,7 +773,7 @@ function bindEvents() {
 
 function init() {
   bindEvents();
-  loadBank();
+  loadResources();
 }
 
 init();
