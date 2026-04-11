@@ -664,6 +664,27 @@ function getDimensionSalience(item) {
 
 function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimensionRatings) {
   const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
+  const rageScore = getDimensionScoreValue(dimensionRatings, "爆冲翻脸");
+  const fantasyScore = getDimensionScoreValue(dimensionRatings, "外挂吞钩");
+  const oldLoveScore = getDimensionScoreValue(dimensionRatings, "旧情滤镜");
+  const greenScore = getDimensionScoreValue(dimensionRatings, "绿帽耐受");
+  const sacrificeScore = getDimensionScoreValue(dimensionRatings, "献祭填坑");
+  const crowdScore = Math.round(
+    (
+      getDimensionScoreValue(dimensionRatings, "炒茶拱火") +
+      getDimensionScoreValue(dimensionRatings, "站队复读") +
+      getDimensionScoreValue(dimensionRatings, "跪舔换边") +
+      getDimensionScoreValue(dimensionRatings, "门槛压人")
+    ) / 4,
+  );
+  const relationshipScore = Math.round((oldLoveScore + greenScore + sacrificeScore) / 3);
+  const spectacleScore = Math.round(
+    (
+      getDimensionScoreValue(dimensionRatings, "台词膨胀") +
+      getDimensionScoreValue(dimensionRatings, "掉马妄想") +
+      fantasyScore
+    ) / 3,
+  );
   const triggerNames = topDimensions
     .filter((item) => item.name !== "做局清算")
     .slice(0, 3)
@@ -675,7 +696,37 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
   } else if (controlScore >= 55) {
     restraintText = "你不是完全没刹车，但刹车通常来得偏晚，往往要等狗血已经滚起来才想起补后手。";
   }
+  const episodeEstimate = clamp(
+    18
+      - Math.round(brainlessIndex / 7)
+      + Math.round((controlScore - 50) / 12)
+      - Math.round((rageScore - 50) / 18)
+      - Math.round((spectacleScore - 50) / 18)
+      - Math.round((relationshipScore - 50) / 20),
+    2,
+    26,
+  );
+  let episodeOutcome = "属于能苟到中段，但迟早会被自己的脑回路重新拖进坑里的那种人。";
+  if (episodeEstimate <= 4) {
+    episodeOutcome = "大概率前几集就把自己送走，不是被狗血反噬，就是先被自己蠢死。";
+  } else if (episodeEstimate <= 8) {
+    episodeOutcome = "能熬过开局，但多半死在第一波高潮，属于观众血压包型主角。";
+  } else if (episodeEstimate <= 14) {
+    episodeOutcome = "能混到中段，主要靠戏剧张力续命，不是靠你真的稳。";
+  } else if (episodeEstimate >= 20) {
+    episodeOutcome = "已经算比较能苟的了，前提是最关键的那一下别突然上头。";
+  }
+  const attributeText = `${personaMeta.tagline || personaMeta.result_intro}主触发区基本落在 ${triggerNames} 这一挂，只要这些元素往你面前一摆，你就容易自动入戏。`;
+  const glossaryText = `${personaMeta.verdict}这类人最大的共性不是单纯坏或单纯蠢，而是特别容易把短剧里的离谱桥段当成自己的现实处理方式。`;
   return [
+    {
+      title: "属性",
+      text: attributeText,
+    },
+    {
+      title: "梗释义",
+      text: glossaryText,
+    },
     {
       title: "你在剧里",
       text: personaMeta.result_intro || personaMeta.verdict,
@@ -685,12 +736,16 @@ function buildDetailedAnalysis(personaMeta, brainlessIndex, topDimensions, dimen
       text: `${personaMeta.result_scene || personaMeta.tagline}最容易把你点着的桥段就是 ${triggerNames} 这一挂，编剧只要把这些元素往你面前一摆，你就很难不自己加戏。`,
     },
     {
-      title: "翻车方式",
+      title: "发病现场",
       text: `${personaMeta.result_flip || personaMeta.verdict}${restraintText}`,
     },
     {
       title: "弹幕锐评",
-      text: `${personaMeta.result_comment || personaMeta.quote}${personaMeta.result_ending ? ` ${personaMeta.result_ending}` : ""}`,
+      text: personaMeta.result_comment || personaMeta.quote,
+    },
+    {
+      title: "活到第几集",
+      text: `按你这套脑回路，扔进 ${personaMeta.genres[0]} 赛道大概能活 ${episodeEstimate} 集。${episodeOutcome}${personaMeta.result_ending ? ` ${personaMeta.result_ending}` : ""}`,
     },
   ];
 }
