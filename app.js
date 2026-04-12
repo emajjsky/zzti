@@ -2,96 +2,29 @@ const QUESTION_BANK_URL = "./data/question-bank.v1.json";
 const MODEL_CONFIG_URL = "./data/model-config.v1.json";
 const ACTIVE_PROFILE = "full";
 const RESULT_TOKEN_PREFIX = "ZZTI_PAYLOAD::";
+const OPTION_LABELS = ["A", "B", "C", "D"];
 
 let PROFILE_CONFIG = {
-  quick: { core: 50, calibration: 0, antiConflict: 0, hidden: 0 },
-  standard: { core: 50, calibration: 0, antiConflict: 0, hidden: 0 },
-  full: { core: 50, calibration: 0, antiConflict: 0, hidden: 0 },
+  quick: { core: 38, calibration: 0, antiConflict: 0, hidden: 0 },
+  standard: { core: 38, calibration: 0, antiConflict: 0, hidden: 0 },
+  full: { core: 38, calibration: 0, antiConflict: 0, hidden: 0 },
 };
-
-let DIMENSION_ORDER = [];
-let DIMENSION_METADATA = [];
-let DIMENSION_META_MAP = {};
-let BRAINLESS_WEIGHTS = {};
+let SCORING_CONFIG = {
+  death_weights: { A: 0, B: 0, C: 3, D: 5 },
+  action_points: { A: 2, B: 0, C: 3, D: 5 },
+  pair_bonus: { DD: 5, CC: 2, CD: 1, DC: 1, CB: 0, BC: 0, DB: 0, BD: 0, BB: 0 },
+  strong_hit_threshold: 13,
+  medium_hit_threshold: 9,
+  clear_trigger: { b_count: 20, d_count: 0, top_score_below: 6 },
+  clear_probe_ids: ["Q05", "Q17", "Q37", "Q38"],
+  fast_death_streak: 3,
+  table_flip_threshold: 10,
+};
 let PERSONA_LIBRARY = {};
-const OPTION_LABELS = ["A", "B", "C", "D"];
-const OPTION_SEVERITY_MAP = { A: 0, B: 1, C: 2, D: 3 };
-const PERSONA_CLUSTERS = {
-  relationship: ["旧情滤镜", "绿帽耐受", "献祭填坑"],
-  crowd: ["炒茶拱火", "站队复读", "跪舔换边", "门槛压人"],
-  spectacle: ["台词膨胀", "掉马妄想", "外挂吞钩"],
-  retaliation: ["爆冲翻脸", "做局清算"],
-};
-const POSITIVE_DIMENSIONS = new Set(["做局清算"]);
-const GENRE_BUCKET_MAP = {
-  "都市男频": "city_power",
-  "都市商战": "city_power",
-  "都市创业": "city_power",
-  "都市职场": "city_power",
-  "金融系统": "city_power",
-  "直播综艺": "spectacle",
-  "年代商战": "business_retro",
-  "穿越重生": "power_fantasy",
-  "修仙玄幻": "power_fantasy",
-  "古装权谋": "power_fantasy",
-  "古装玄学": "power_fantasy",
-  "江湖帮会": "street_power",
-  "乡镇狗血": "street_power",
-  "年代乡土": "street_power",
-  "校园群像": "street_power",
-  "娱乐直播": "spectacle",
-  "综合狗血": "spectacle",
-};
-const DIMENSION_DIAGNOSTICS = {
-  "旧情滤镜": {
-    high: "你对旧关系的情绪记忆太长，别人只要抛一个苦衷，你就容易把旧账重新当未完待续。",
-    low: "好在你对旧情这块还没完全失守，至少不是别人一回头你就自动替人减刑。",
-  },
-  "绿帽耐受": {
-    high: "边界一被踩，你第一反应不是翻脸，而是替这段关系找补丁，耐受高得有点离谱。",
-    low: "你对越界行为还有基本警觉，不至于别人把暧昧贴到脸上你都继续装看不见。",
-  },
-  "献祭填坑": {
-    high: "你太容易把别人的烂摊子背成自己的责任，谁会哭、谁会闹、谁会拿亲情压你，谁就更容易从你身上拆资源。",
-    low: "你在填坑这件事上还算有点刹车，不至于谁一卖惨你就连前途都往外掏。",
-  },
-  "炒茶拱火": {
-    high: "你很懂一句话该怎么递、递给谁最炸，很多局不是你开的，但你特别会往火里补风。",
-    low: "你至少不是那种见缝就递刀的人，很多热闹你看得出，却未必急着亲手点着。",
-  },
-  "台词膨胀": {
-    high: "牌还没翻，狠话先落地，这种先把气势做满的冲动在你身上很重。",
-    low: "你嘴上还算克制，不至于实力没到就先靠台词把自己吹成大结局。",
-  },
-  "爆冲翻脸": {
-    high: "你被踩到点时起爆很快，情绪上头后第一反应就是把桌子、关系和场子一起掀了。",
-    low: "你至少没到见火就炸的程度，很多场合还知道先压一下，不让自己立刻变现场火药桶。",
-  },
-  "站队复读": {
-    high: "场上一旦有主流口径，你很容易接着复读，顺手把别人的偏见喊成自己的立场。",
-    low: "你在跟风这块还留着点判断，不至于谁声音大你就自动替谁扩音。",
-  },
-  "跪舔换边": {
-    high: "你对风向的反应太快了，谁势大就往谁那边挪，保命和讨好常常压过原则。",
-    low: "你对强弱风向至少还有点抵抗力，不会一看到大人物脸色就立刻原地变色。",
-  },
-  "门槛压人": {
-    high: "你看人很容易先看身价、背景和能不能撑门面，现实嗅觉强，但也容易刻薄和势利。",
-    low: "你至少没把门第当成唯一准绳，还保留一点先看人再看包装的能力。",
-  },
-  "做局清算": {
-    high: "你不是不会忍，而是懂得留证、记账、攒局，很多人刚开口时你已经在算收网时间。",
-    low: "你在后手这块偏弱，容易气还没消就先把牌掀了，结果爽完才想起证据链没补齐。",
-  },
-  "掉马妄想": {
-    high: "只要剧情给你一点身份暗示，你脑子里的掉马 BGM 就会自动响，翻盘分镜比证据跑得还快。",
-    low: "你对掉马这套还算冷静，不至于半句暗示就先给自己脑补出全员跪地认错。",
-  },
-  "外挂吞钩": {
-    high: "系统、萌宝、认亲、神迹这些钩子对你太有效了，越离谱的桥段，你越容易先吞一半。",
-    low: "你对外挂味道还有点免疫，至少不会什么都往天命和奇迹上靠。",
-  },
-};
+let FORMAL_PERSONAS = [];
+let HIDDEN_PERSONA = "人间清醒";
+let SIGNAL_METADATA = [];
+let SIGNAL_META_MAP = {};
 
 const state = {
   bank: null,
@@ -165,6 +98,33 @@ function mulberry32(seed) {
   };
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function encodeBase64Url(text) {
+  const encoded = btoa(unescape(encodeURIComponent(text)));
+  return encoded.replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+
+function createPaperSeed() {
+  if (window.crypto && window.crypto.getRandomValues) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return buffer[0];
+  }
+  return Math.floor(Math.random() * 0xffffffff);
+}
+
 function cloneQuestion(question) {
   return {
     ...question,
@@ -188,94 +148,21 @@ function shuffleOptions(question, seed) {
   }));
 }
 
-function getGenreBucket(genre) {
-  return GENRE_BUCKET_MAP[genre] || genre;
-}
-
-function chooseCore(coreQuestions, count, seed) {
-  const ordered = coreQuestions
+function buildPaper(profile = "full", seed = createPaperSeed()) {
+  const questions = (state.bank?.core_questions || [])
     .slice()
     .sort((left, right) => (left.order || 0) - (right.order || 0))
-    .map(cloneQuestion);
-
-  const remaining = ordered.slice();
-  const picked = [];
-
-  while (remaining.length) {
-    const last = picked[picked.length - 1];
-    const beforeLast = picked[picked.length - 2];
-
-    let winnerIndex = 0;
-    let winnerScore = Infinity;
-
-    remaining.forEach((question, index) => {
-      let score = 0;
-
-      if (last) {
-        if (question.metric_name === last.metric_name) {
-          score += 100;
-        }
-        if (question.genre === last.genre) {
-          score += 24;
-        } else if (getGenreBucket(question.genre) === getGenreBucket(last.genre)) {
-          score += 11;
-        }
-        if (question.scene_cluster === last.scene_cluster) {
-          score += 12;
-        }
-      }
-
-      if (beforeLast) {
-        if (question.metric_name === beforeLast.metric_name) {
-          score += 18;
-        }
-        if (question.genre === beforeLast.genre) {
-          score += 8;
-        } else if (getGenreBucket(question.genre) === getGenreBucket(beforeLast.genre)) {
-          score += 4;
-        }
-      }
-
-      const metricRemaining = remaining.filter((item) => item.metric_name === question.metric_name).length;
-      score -= metricRemaining * 4;
-      score += hashString(`${seed}:${question.id}:order`) / 4294967296;
-
-      if (score < winnerScore) {
-        winnerScore = score;
-        winnerIndex = index;
-      }
-    });
-
-    const pickedQuestion = remaining.splice(winnerIndex, 1)[0];
-    pickedQuestion.options = shuffleOptions(pickedQuestion, seed);
-    pickedQuestion.paper_order = picked.length + 1;
-    picked.push(pickedQuestion);
-  }
-
-  return picked.slice(0, count);
-}
-
-function createPaperSeed() {
-  if (window.crypto && window.crypto.getRandomValues) {
-    const buffer = new Uint32Array(1);
-    window.crypto.getRandomValues(buffer);
-    return buffer[0];
-  }
-  return Math.floor(Math.random() * 0xffffffff);
-}
-
-function buildPaper(profile = "standard", seed = createPaperSeed()) {
-  const coreQuestions = state.bank.core_questions || [];
-  const selectedCore = chooseCore(coreQuestions, coreQuestions.length, seed);
-  return {
-    profile,
-    seed,
-    questions: selectedCore,
-  };
+    .map(cloneQuestion)
+    .map((question, index) => ({
+      ...question,
+      options: shuffleOptions(question, seed),
+      paper_order: index + 1,
+    }));
+  return { profile, seed, questions };
 }
 
 function getProfileQuestionCount(profile) {
-  const config = PROFILE_CONFIG[profile];
+  const config = PROFILE_CONFIG[profile] || PROFILE_CONFIG.full;
   return config.core + config.calibration + config.antiConflict + config.hidden;
 }
 
@@ -288,11 +175,7 @@ function updateStartButton() {
     return;
   }
   dom.startButton.disabled = false;
-  dom.startButton.textContent = `进入固定发疯卷 · ${getProfileQuestionCount(ACTIVE_PROFILE)}题`;
-}
-
-function getQuestionTypeLabel(question) {
-  return "固定卷";
+  dom.startButton.textContent = `进入前世死法卷 · ${getProfileQuestionCount(ACTIVE_PROFILE)}题`;
 }
 
 function showSection(section) {
@@ -334,7 +217,12 @@ function renderQuestion() {
   dom.questionCounter.textContent = `第 ${state.currentIndex + 1} / ${total} 题`;
   dom.progressFill.style.width = `${progress}%`;
   dom.brainMeter.textContent = `脑子剩余 ${Math.max(0, 100 - Math.round((state.currentIndex / total) * 100))}%`;
-  dom.questionStem.textContent = question.stem;
+  dom.questionStem.innerHTML = `
+    <span>${escapeHtml(question.stem)}</span>
+    <small style="display:block;margin-top:0.9rem;font-size:0.88rem;line-height:1.7;color:#8c1f16;font-weight:800;">
+      ${escapeHtml(question.live_comment || "")}
+    </small>
+  `;
   dom.prevQuestionButton.disabled = state.currentIndex === 0;
 
   dom.optionsContainer.innerHTML = "";
@@ -345,7 +233,7 @@ function renderQuestion() {
       button.classList.add("is-selected");
     }
     button.type = "button";
-    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-text">${option.text}</span>`;
+    button.innerHTML = `<span class="option-key">${option.id}</span><span class="option-text">${escapeHtml(option.text)}</span>`;
     button.addEventListener("click", () => {
       state.answers[state.currentIndex] = { question, option };
       if (state.currentIndex === total - 1) {
@@ -359,746 +247,341 @@ function renderQuestion() {
   });
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function normalizeScore(actual, min, max) {
-  if (max === min) {
-    return 50;
-  }
-  return Math.round(((actual - min) / (max - min)) * 100);
-}
-
-function calculateDimensionScores() {
-  const tracks = {};
-  DIMENSION_ORDER.forEach((dimension) => {
-    tracks[dimension] = { actual: 0, min: 0, max: 0, touched: 0 };
+function buildActionCounts() {
+  const counts = { A: 0, B: 0, C: 0, D: 0 };
+  state.answers.forEach(({ option }) => {
+    const level = option.level || option.id || "A";
+    counts[level] = (counts[level] || 0) + 1;
   });
+  return counts;
+}
+
+function buildMaxDStreak() {
+  let current = 0;
+  let best = 0;
+  state.answers.forEach(({ option }) => {
+    const level = option.level || option.id || "A";
+    if (level === "D") {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 0;
+    }
+  });
+  return best;
+}
+
+function calculateFateScores() {
+  const fateScores = Object.fromEntries(FORMAL_PERSONAS.map((name) => [name, 0]));
+  const answerLevelMap = {};
 
   state.answers.forEach(({ question, option }) => {
-    DIMENSION_ORDER.forEach((dimension) => {
-      const values = question.options.map((item) => (item.weights && item.weights[dimension]) || 0);
-      const hasDimension = values.some((value) => value !== 0);
-      if (!hasDimension) {
-        return;
+    const level = option.level || option.id || "A";
+    answerLevelMap[question.id] = level;
+    Object.entries(option.fate_scores || {}).forEach(([fate, score]) => {
+      if (typeof fateScores[fate] === "number") {
+        fateScores[fate] += Number(score);
       }
-      tracks[dimension].touched += 1;
-      tracks[dimension].actual += (option.weights && option.weights[dimension]) || 0;
-      tracks[dimension].min += Math.min(...values);
-      tracks[dimension].max += Math.max(...values);
     });
   });
 
-  const normalized = {};
-  DIMENSION_ORDER.forEach((dimension) => {
-    const track = tracks[dimension];
-    normalized[dimension] = track.touched ? normalizeScore(track.actual, track.min, track.max) : 50;
+  const pairPatterns = {};
+  const pairLevels = {};
+  FORMAL_PERSONAS.forEach((name) => {
+    const meta = PERSONA_LIBRARY[name];
+    const levels = (meta.question_ids || []).map((questionId) => answerLevelMap[questionId] || "A");
+    const pattern = levels.join("");
+    pairLevels[name] = levels;
+    pairPatterns[name] = pattern;
+    fateScores[name] += Number(SCORING_CONFIG.pair_bonus[pattern] || 0);
   });
-  return normalized;
+
+  return { fateScores, pairPatterns, pairLevels };
 }
 
-function calculateBrainlessIndex(dimensionScores) {
-  let weightedSum = 0;
-  let totalWeight = 0;
-  Object.entries(BRAINLESS_WEIGHTS).forEach(([dimension, weight]) => {
-    const score = dimensionScores[dimension] ?? 50;
-    const effectiveScore = weight >= 0 ? score : 100 - score;
-    weightedSum += Math.abs(weight) * effectiveScore;
-    totalWeight += Math.abs(weight);
-  });
-  return Math.round(weightedSum / totalWeight);
-}
-
-function averageDimensionScore(source, dimensions, fallback = 50) {
-  const values = dimensions
-    .map((dimension) => source[dimension])
-    .filter((value) => typeof value === "number");
-  if (!values.length) {
-    return fallback;
-  }
-  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
-}
-
-function buildClusterScores(source) {
-  return Object.fromEntries(
-    Object.entries(PERSONA_CLUSTERS).map(([cluster, dimensions]) => [
-      cluster,
-      averageDimensionScore(source, dimensions),
-    ]),
+function calculateBrainlessIndex(actionCounts, totalQuestions) {
+  const actionPoints = SCORING_CONFIG.action_points;
+  const actual = Object.entries(actionCounts).reduce(
+    (sum, [level, count]) => sum + count * (actionPoints[level] || 0),
+    0,
   );
-}
-
-function buildDimensionRankMap(dimensionScores) {
-  return Object.fromEntries(
-    Object.entries(dimensionScores)
-      .sort((left, right) => right[1] - left[1])
-      .map(([dimension], index) => [dimension, index + 1]),
-  );
-}
-
-function personaAffinity(meta, dimensionScores, context) {
-  const { rankMap, clusterScores, topDimensionNames } = context;
-  return DIMENSION_ORDER.reduce((sum, dimension) => {
-    const target = meta.targets[dimension] ?? 50;
-    let importance = 0.55;
-    if ((meta.primary || []).includes(dimension)) {
-      importance = 1.8;
-    } else if ((meta.secondary || []).includes(dimension)) {
-      importance = 1.1;
-    }
-    const actual = dimensionScores[dimension] ?? 50;
-    const similarity = 100 - Math.abs(actual - target);
-    let score = sum + similarity * importance;
-
-    if (target >= 90 && actual < 70) {
-      score -= (70 - actual) * importance * 1.5;
-    } else if (target >= 80 && actual < 60) {
-      score -= (60 - actual) * importance * 1.1;
-    } else if (target >= 70 && actual < 50) {
-      score -= (50 - actual) * importance * 0.8;
-    }
-
-    if (target <= 10 && actual > 35) {
-      score -= (actual - 35) * importance * 1.4;
-    } else if (target <= 20 && actual > 50) {
-      score -= (actual - 50) * importance * 1.0;
-    } else if (target <= 30 && actual > 65) {
-      score -= (actual - 65) * importance * 0.6;
-    }
-
-    return score;
-  }, 0)
-    + (() => {
-      let score = 0;
-      const targetClusterScores = buildClusterScores(meta.targets || {});
-      Object.entries(targetClusterScores).forEach(([cluster, targetScore]) => {
-        const actualScore = clusterScores[cluster] ?? 50;
-        const diff = Math.abs(actualScore - targetScore);
-        const clusterWeight = cluster === "relationship" || cluster === "spectacle" ? 0.9 : 0.7;
-        score -= diff * clusterWeight;
-      });
-
-      (meta.primary || []).forEach((dimension) => {
-        const rank = rankMap[dimension] ?? DIMENSION_ORDER.length;
-        if (rank <= 3) {
-          score += (4 - rank) * 14;
-        } else if (rank <= 6) {
-          score += (7 - rank) * 5;
-        } else {
-          score -= (rank - 6) * 5.5;
-        }
-      });
-
-      (meta.secondary || []).forEach((dimension) => {
-        const rank = rankMap[dimension] ?? DIMENSION_ORDER.length;
-        if (rank <= 4) {
-          score += (5 - rank) * 5;
-        }
-      });
-
-      const dominantHitCount = topDimensionNames
-        .slice(0, 3)
-        .filter((dimension) => (meta.primary || []).includes(dimension)).length;
-      if (!dominantHitCount) {
-        score -= 26;
-      } else {
-        score += dominantHitCount * 8;
-      }
-
-      const offProfileDominants = topDimensionNames
-        .slice(0, 3)
-        .filter((dimension) => (meta.targets?.[dimension] ?? 50) <= 35);
-      score -= offProfileDominants.length * 10;
-
-      return score;
-    })();
-}
-
-function applyPersonaBounds(meta, dimensionScores, score) {
-  let nextScore = score;
-  Object.entries(meta.min_scores || {}).forEach(([dimension, minimum]) => {
-    const actual = dimensionScores[dimension] ?? 50;
-    if (actual < minimum) {
-      nextScore -= (minimum - actual) * 2.6;
-    }
-  });
-  Object.entries(meta.max_scores || {}).forEach(([dimension, maximum]) => {
-    const actual = dimensionScores[dimension] ?? 50;
-    if (actual > maximum) {
-      nextScore -= (actual - maximum) * 2.2;
-    }
-  });
-  return nextScore;
-}
-
-function rankPersonas(dimensionScores) {
-  const rankMap = buildDimensionRankMap(dimensionScores);
-  const clusterScores = buildClusterScores(dimensionScores);
-  const topDimensionNames = Object.entries(dimensionScores)
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 4)
-    .map(([dimension]) => dimension);
-
-  return Object.entries(PERSONA_LIBRARY)
-    .map(([name, meta]) => ({
-      name,
-      score: applyPersonaBounds(
-        meta,
-        dimensionScores,
-        personaAffinity(meta, dimensionScores, {
-          rankMap,
-          clusterScores,
-          topDimensionNames,
-        }),
-      ),
-    }))
-    .sort((left, right) => right.score - left.score);
-}
-
-function pickPersona(dimensionScores) {
-  return rankPersonas(dimensionScores)[0]?.name || null;
-}
-
-function getConfidenceLabel(score) {
-  if (score < 45) {
-    return "边缘撞型";
-  }
-  if (score < 60) {
-    return "摇摆命中";
-  }
-  if (score < 75) {
-    return "基本坐实";
-  }
-  return "高危坐实";
-}
-
-function buildConfidenceScore(personaRanking, personaMeta, dimensionScores, topDimensions) {
-  const runnerUp = personaRanking[1] || null;
-  const runnerUpName = runnerUp ? (PERSONA_LIBRARY[runnerUp.name]?.display_name || runnerUp.name) : "无明显邻近人格";
-  const runnerUpGap = Math.round(runnerUp ? personaRanking[0].score - runnerUp.score : 36);
-
-  const averageAlignment = (dimensions, fallback) => {
-    if (!dimensions || !dimensions.length) {
-      return fallback;
-    }
-    const values = dimensions.map((dimension) => {
-      const target = personaMeta.targets?.[dimension] ?? 50;
-      const actual = dimensionScores[dimension] ?? 50;
-      return Math.max(0, 100 - Math.abs(actual - target));
-    });
-    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
-  };
-
-  const primaryAlignment = averageAlignment(personaMeta.primary || [], 68);
-  const secondaryAlignment = averageAlignment(personaMeta.secondary || [], 60);
-  const topDimensionNames = topDimensions.map((item) => item.name);
-  const dominantHitCount = topDimensionNames.filter((name) => (personaMeta.primary || []).includes(name)).length;
-  const offProfileCount = topDimensionNames.filter((name) => (personaMeta.targets?.[name] ?? 50) <= 35).length;
-
-  const confidenceScore = clamp(
-    Math.round(
-      28
-        + Math.min(Math.max(runnerUpGap, 0), 40) * 0.95
-        + Math.max(primaryAlignment - 55, 0) * 0.42
-        + Math.max(secondaryAlignment - 50, 0) * 0.18
-        + dominantHitCount * 6
-        - offProfileCount * 6,
-    ),
-    32,
-    96,
-  );
-
-  return {
-    confidenceScore,
-    confidenceLabel: getConfidenceLabel(confidenceScore),
-    runnerUpName,
-    runnerUpGap,
-  };
-}
-
-function getStabilityLabel(score) {
-  if (score < 45) {
-    return "波动失真";
-  }
-  if (score < 60) {
-    return "起伏偏大";
-  }
-  if (score < 75) {
-    return "基本稳定";
-  }
-  return "稳定成型";
-}
-
-function buildAnswerStability(answerRecords, dimensionScores) {
-  const grouped = {};
-  answerRecords.forEach(({ question, option }) => {
-    const metricName = question.metric_name || "";
-    if (!metricName) {
-      return;
-    }
-    if (!grouped[metricName]) {
-      grouped[metricName] = [];
-    }
-    grouped[metricName].push(OPTION_SEVERITY_MAP[option.level || option.id] || 0);
-  });
-
-  const metricConsistency = [];
-  const metricScores = [];
-
-  Object.entries(grouped).forEach(([metricName, values]) => {
-    if (values.length < 3) {
-      return;
-    }
-    const spread = Math.max(...values) - Math.min(...values);
-    const meanValue = values.reduce((sum, value) => sum + value, 0) / values.length;
-    const variance = values.reduce((sum, value) => sum + ((value - meanValue) ** 2), 0) / values.length;
-    const metricScore = clamp(Math.round(100 - spread * 16 - variance * 18), 34, 100);
-    metricScores.push(metricScore);
-    metricConsistency.push({
-      metricName,
-      score: metricScore,
-      spread: Math.round(spread * 100) / 100,
-      variance: Math.round(variance * 100) / 100,
-    });
-  });
-
-  const conflictFlags = [];
-  let penalty = 0;
-  if ((dimensionScores["爆冲翻脸"] || 50) >= 78 && (dimensionScores["做局清算"] || 50) >= 78) {
-    conflictFlags.push("又想掀桌又想养局");
-    penalty += 10;
-  }
-  if ((dimensionScores["旧情滤镜"] || 50) <= 25 && (dimensionScores["绿帽耐受"] || 50) >= 82) {
-    conflictFlags.push("对白月光冷却对越界过忍");
-    penalty += 8;
-  }
-  if ((dimensionScores["外挂吞钩"] || 50) >= 85 && (dimensionScores["做局清算"] || 50) >= 82) {
-    conflictFlags.push("一边信天降外挂一边想证据收网");
-    penalty += 7;
-  }
-
-  const baseline = metricScores.length
-    ? Math.round(metricScores.reduce((sum, value) => sum + value, 0) / metricScores.length)
-    : 58;
-  const stabilityScore = clamp(baseline - penalty, 28, 98);
-
-  return {
-    stabilityScore,
-    stabilityLabel: getStabilityLabel(stabilityScore),
-    conflictFlags,
-    metricConsistency,
-  };
-}
-
-function buildBlendMeta(personaRanking) {
-  const runnerUp = personaRanking[1] || null;
-  if (!runnerUp) {
-    return {
-      secondaryPersonaName: "无明显副人格",
-      primaryPersonaShare: 100,
-      secondaryPersonaShare: 0,
-      blendLabel: "单核坐实",
-    };
-  }
-  const runnerUpName = PERSONA_LIBRARY[runnerUp.name]?.display_name || runnerUp.name;
-  const gap = Math.round((personaRanking[0]?.score || 0) - runnerUp.score);
-  const secondaryPersonaShare = clamp(Math.round(42 - Math.max(gap, 0) / 3), 18, 41);
-  const primaryPersonaShare = 100 - secondaryPersonaShare;
-  let blendLabel = "单核坐实";
-  if (secondaryPersonaShare >= 35) {
-    blendLabel = "双芯混响";
-  } else if (secondaryPersonaShare >= 28) {
-    blendLabel = "偏混合";
-  }
-  return {
-    secondaryPersonaName: runnerUpName,
-    primaryPersonaShare,
-    secondaryPersonaShare,
-    blendLabel,
-  };
-}
-
-function truncateText(text, limit = 42) {
-  const compact = String(text || "").replace(/\s+/g, "");
-  if (compact.length <= limit) {
-    return compact;
-  }
-  return `${compact.slice(0, limit - 1)}…`;
-}
-
-function buildAnswerEvidence(answerRecords, personaMeta, topDimensions, count = 3) {
-  const focusDimensions = [];
-  topDimensions.forEach((item) => {
-    if (!focusDimensions.includes(item.name)) {
-      focusDimensions.push(item.name);
-    }
-  });
-  (personaMeta.primary || []).forEach((dimension) => {
-    if (!focusDimensions.includes(dimension)) {
-      focusDimensions.push(dimension);
-    }
-  });
-  (personaMeta.secondary || []).forEach((dimension) => {
-    if (!focusDimensions.includes(dimension)) {
-      focusDimensions.push(dimension);
-    }
-  });
-
-  const ranked = answerRecords
-    .map(({ question, option }) => {
-      const weights = option.weights || {};
-      let impact = 0;
-      const matchedDimensions = [];
-
-      focusDimensions.forEach((dimension) => {
-        const value = weights[dimension] || 0;
-        if (value === 0) {
-          return;
-        }
-        const target = personaMeta.targets?.[dimension] ?? 50;
-        let alignedValue = Math.abs(value) * 0.35;
-        if (target >= 65 && value > 0) {
-          alignedValue = value;
-        } else if (target <= 35 && value < 0) {
-          alignedValue = Math.abs(value);
-        }
-        if ((personaMeta.primary || []).includes(dimension)) {
-          impact += alignedValue * 2.6;
-        } else if (topDimensions.some((item) => item.name === dimension)) {
-          impact += alignedValue * 1.9;
-        } else {
-          impact += alignedValue * 1.2;
-        }
-        matchedDimensions.push(dimension);
-      });
-
-      if (impact <= 0) {
-        return null;
-      }
-
-      impact += (OPTION_SEVERITY_MAP[option.level || option.original_id || option.id] || 0) * 0.8;
-      return {
-        questionId: question.id,
-        metricName: question.metric_name || "",
-        stemExcerpt: truncateText(question.stem),
-        optionText: option.text,
-        dimensions: matchedDimensions,
-        dimensionLabels: matchedDimensions.map((dimension) => getDimensionMeta(dimension).label.replace("指数", "")),
-        impact: Math.round(impact * 100) / 100,
-      };
-    })
-    .filter(Boolean)
-    .sort((left, right) => right.impact - left.impact);
-
-  const selected = [];
-  const coveredDimensions = new Set();
-  const coveredMetrics = new Set();
-
-  ranked.forEach((item) => {
-    if (selected.length >= count) {
-      return;
-    }
-    const freshDimension = item.dimensions.some((dimension) => !coveredDimensions.has(dimension));
-    const freshMetric = !coveredMetrics.has(item.metricName);
-    if (freshDimension || freshMetric || !selected.length) {
-      selected.push(item);
-      item.dimensions.forEach((dimension) => coveredDimensions.add(dimension));
-      if (item.metricName) {
-        coveredMetrics.add(item.metricName);
-      }
-    }
-  });
-
-  if (selected.length < count) {
-    const selectedIds = new Set(selected.map((item) => item.questionId));
-    ranked.forEach((item) => {
-      if (selected.length >= count || selectedIds.has(item.questionId)) {
-        return;
-      }
-      selected.push(item);
-      selectedIds.add(item.questionId);
-    });
-  }
-
-  return selected;
-}
-
-function buildEvidenceDigest(answerEvidence) {
-  if (!answerEvidence.length) {
-    return "这次答卷没留下足够清晰的证据链，结果更像撞型，不像铁案。";
-  }
-  return `这次判定主要咬住了你在 ${answerEvidence.map((item) => `「${item.stemExcerpt}」`).join("、")} 这几道题上的选法。`;
+  const maximum = totalQuestions * Math.max(...Object.values(actionPoints));
+  return maximum ? Math.round((actual / maximum) * 100) : 0;
 }
 
 function getVerdictLabel(index) {
-  if (index < 20) {
-    return "人味尚存";
-  }
-  if (index < 40) {
-    return "轻度短剧化";
-  }
-  if (index < 60) {
-    return "中度供梗体";
-  }
-  if (index < 80) {
-    return "重度发疯体";
-  }
-  return "钛合金脑残圣体";
+  if (index < 20) return "人味尚存";
+  if (index < 40) return "轻度供梗";
+  if (index < 60) return "中度发病";
+  if (index < 80) return "重度脑残";
+  return "钛合金送头圣体";
 }
 
-function getDimensionMeta(name) {
-  return DIMENSION_META_MAP[name] || {
-    name,
-    label: name,
-    group: "未分类",
-    summary: "",
+function getConfidenceLabel(score) {
+  if (score < 45) return "边缘命中";
+  if (score < 60) return "摇摆命中";
+  if (score < 75) return "基本坐实";
+  return "高度坐实";
+}
+
+function getStabilityLabel(score) {
+  if (score < 45) return "左右横跳";
+  if (score < 60) return "略有摇摆";
+  if (score < 75) return "基本稳定";
+  return "稳定成型";
+}
+
+function getSignalLevel(name, score) {
+  if (name === "clear_rate") {
+    if (score < 20) return "基本裸奔";
+    if (score < 40) return "偶尔刹车";
+    if (score < 60) return "开始留后手";
+    if (score < 80) return "暗里收权";
+    return "冷脸收网";
+  }
+  if (name === "flip_rate") {
+    if (score < 20) return "桌还在";
+    if (score < 40) return "手痒一下";
+    if (score < 60) return "随时想掀";
+    if (score < 80) return "炸点偏低";
+    return "掀桌怪";
+  }
+  if (name === "hesitate_rate") {
+    if (score < 20) return "刹得住";
+    if (score < 40) return "偶尔心软";
+    if (score < 60) return "慢性送头";
+    if (score < 80) return "拖到出事";
+    return "观察成瘾";
+  }
+  if (name === "sacrifice_rate") {
+    if (score < 20) return "还能活";
+    if (score < 40) return "时有献祭";
+    if (score < 60) return "送头成瘾";
+    if (score < 80) return "祭品气质";
+    return "直接上供";
+  }
+  if (score < 20) return "轻度复购";
+  if (score < 40) return "反复踩坑";
+  if (score < 60) return "死局常客";
+  if (score < 80) return "回头客";
+  return "充值会员";
+}
+
+function buildSignalRatings(actionCounts, pairPatterns, totalQuestions) {
+  const repeatHits = Object.values(pairPatterns).filter((pattern) => ["CC", "CD", "DC", "DD"].includes(pattern)).length;
+  const signalScores = {
+    clear_rate: totalQuestions ? Math.round((actionCounts.B / totalQuestions) * 100) : 0,
+    sacrifice_rate: totalQuestions ? Math.round((actionCounts.D / totalQuestions) * 100) : 0,
+    hesitate_rate: totalQuestions ? Math.round((actionCounts.C / totalQuestions) * 100) : 0,
+    flip_rate: totalQuestions ? Math.round((actionCounts.A / totalQuestions) * 100) : 0,
+    repeat_rate: FORMAL_PERSONAS.length ? Math.round((repeatHits / FORMAL_PERSONAS.length) * 100) : 0,
   };
-}
 
-function getDimensionLevel(name, score) {
-  if (POSITIVE_DIMENSIONS.has(name)) {
-    if (score < 20) {
-      return "当场送头";
-    }
-    if (score < 40) {
-      return "后手偏少";
-    }
-    if (score < 60) {
-      return "勉强能忍";
-    }
-    if (score < 80) {
-      return "留证熟练";
-    }
-    return "收网成精";
-  }
-  if (score < 20) {
-    return "人味尚存";
-  }
-  if (score < 40) {
-    return "轻度上头";
-  }
-  if (score < 60) {
-    return "中度入戏";
-  }
-  if (score < 80) {
-    return "重度供梗";
-  }
-  return "晚期发病";
-}
-
-function buildDimensionRatings(dimensionScores) {
-  return DIMENSION_ORDER.map((dimension) => {
-    const meta = getDimensionMeta(dimension);
-    const score = dimensionScores[dimension] ?? 50;
+  return SIGNAL_METADATA.map((meta) => {
+    const score = signalScores[meta.name] || 0;
     return {
-      name: dimension,
+      name: meta.name,
       label: meta.label,
-      group: meta.group,
       summary: meta.summary,
       score,
-      level: getDimensionLevel(dimension, score),
+      level: getSignalLevel(meta.name, score),
     };
   });
 }
 
-function getTopDimensions(dimensionScores, count = 3) {
-  return Object.entries(dimensionScores)
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, count)
-    .map(([dimension, score]) => {
-      const meta = getDimensionMeta(dimension);
-      return {
-        name: dimension,
-        dimension,
-        label: meta.label,
-        score,
-        level: getDimensionLevel(dimension, score),
-      };
-    });
-}
+function determinePrimaryResult(fateScores, actionCounts) {
+  const ranked = Object.entries(fateScores).sort((left, right) => right[1] - left[1]);
+  const [topName, topScore] = ranked[0];
+  const clearReasons = [];
+  const clearTrigger = SCORING_CONFIG.clear_trigger;
 
-function buildPosterStory(personaMeta, brainlessIndex, topDimensions) {
-  const dimensionText = topDimensions.map((item) => `${item.label}${item.score}`).join(" / ");
-  return `你最显眼的短剧脑回路集中在 ${dimensionText} 这几处。扔进 ${personaMeta.genres[0]} 赛道，你大概率会被剪成 ${personaMeta.roles[0]} 位：情绪先炸，判断后补，逻辑只在片尾彩蛋里短暂出现。当前脑残指数 ${brainlessIndex}，已经到了看见认亲线索都会自动坐直的程度。`;
-}
+  if (actionCounts.B >= clearTrigger.b_count) clearReasons.push("暗里收权成习惯");
+  if (actionCounts.D === clearTrigger.d_count) clearReasons.push("从未直接献祭");
+  if (topScore < clearTrigger.top_score_below) clearReasons.push("没有任何死法形成强命中");
 
-function getDimensionScoreValue(dimensionRatings, dimensionName) {
-  return dimensionRatings.find((item) => item.name === dimensionName)?.score ?? 50;
-}
-
-function getDimensionDisplayLabel(item) {
-  return item.label.replace("指数", "");
-}
-
-function getDimensionSalience(item) {
-  if (item.name === "做局清算") {
-    return Math.abs(item.score - 78);
-  }
-  return item.score;
-}
-
-function buildDetailedAnalysis(
-  personaMeta,
-  brainlessIndex,
-  topDimensions,
-  dimensionRatings,
-  confidenceMeta,
-  stabilityMeta,
-  blendMeta,
-  answerEvidence,
-) {
-  const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
-  const rageScore = getDimensionScoreValue(dimensionRatings, "爆冲翻脸");
-  const fantasyScore = getDimensionScoreValue(dimensionRatings, "外挂吞钩");
-  const oldLoveScore = getDimensionScoreValue(dimensionRatings, "旧情滤镜");
-  const greenScore = getDimensionScoreValue(dimensionRatings, "绿帽耐受");
-  const sacrificeScore = getDimensionScoreValue(dimensionRatings, "献祭填坑");
-  const crowdScore = Math.round(
-    (
-      getDimensionScoreValue(dimensionRatings, "炒茶拱火") +
-      getDimensionScoreValue(dimensionRatings, "站队复读") +
-      getDimensionScoreValue(dimensionRatings, "跪舔换边") +
-      getDimensionScoreValue(dimensionRatings, "门槛压人")
-    ) / 4,
-  );
-  const relationshipScore = Math.round((oldLoveScore + greenScore + sacrificeScore) / 3);
-  const spectacleScore = Math.round(
-    (
-      getDimensionScoreValue(dimensionRatings, "台词膨胀") +
-      getDimensionScoreValue(dimensionRatings, "掉马妄想") +
-      fantasyScore
-    ) / 3,
-  );
-  const triggerNames = topDimensions
-    .filter((item) => item.name !== "做局清算")
-    .slice(0, 3)
-    .map(getDimensionDisplayLabel)
-    .join("、") || "狗血桥段";
-  let restraintText = "你给自己留后手这件事做得一般，一旦上头就容易把场面和退路一起烧掉。";
-  if (controlScore >= 75) {
-    restraintText = "你还有点后手意识，知道什么时候该录音、留证、卡节点，不至于每次都裸奔进修罗场。";
-  } else if (controlScore >= 55) {
-    restraintText = "你不是完全没刹车，但刹车通常来得偏晚，往往要等狗血已经滚起来才想起补后手。";
-  }
-  const episodeEstimate = clamp(
-    18
-      - Math.round(brainlessIndex / 7)
-      + Math.round((controlScore - 50) / 12)
-      - Math.round((rageScore - 50) / 18)
-      - Math.round((spectacleScore - 50) / 18)
-      - Math.round((relationshipScore - 50) / 20),
-    2,
-    26,
-  );
-  let episodeOutcome = "属于能苟到中段，但迟早会被自己的脑回路重新拖进坑里的那种人。";
-  if (episodeEstimate <= 4) {
-    episodeOutcome = "大概率前几集就把自己送走，不是被狗血反噬，就是先被自己蠢死。";
-  } else if (episodeEstimate <= 8) {
-    episodeOutcome = "能熬过开局，但多半死在第一波高潮，属于观众血压包型主角。";
-  } else if (episodeEstimate <= 14) {
-    episodeOutcome = "能混到中段，主要靠戏剧张力续命，不是靠你真的稳。";
-  } else if (episodeEstimate >= 20) {
-    episodeOutcome = "已经算比较能苟的了，前提是最关键的那一下别突然上头。";
-  }
-  const attributeText = `${personaMeta.tagline || personaMeta.result_intro}主触发区基本落在 ${triggerNames} 这一挂，只要这些元素往你面前一摆，你就容易自动入戏。`;
-  const glossaryText = `${personaMeta.verdict}这类人最大的共性不是单纯坏或单纯蠢，而是特别容易把短剧里的离谱桥段当成自己的现实处理方式。`;
-  const evidenceText = answerEvidence.length
-    ? answerEvidence.map((item) => `你在「${item.stemExcerpt}」里选了「${item.optionText}」`).join("；")
-    : "这轮答卷没有拉出特别清晰的题目证据，所以更像撞型，不像铁案。";
-  return [
-    {
-      title: "属性",
-      text: attributeText,
-    },
-    {
-      title: "梗释义",
-      text: glossaryText,
-    },
-    {
-      title: "你在剧里",
-      text: personaMeta.result_intro || personaMeta.verdict,
-    },
-    {
-      title: "常演戏码",
-      text: `${personaMeta.result_scene || personaMeta.tagline}最容易把你点着的桥段就是 ${triggerNames} 这一挂，编剧只要把这些元素往你面前一摆，你就很难不自己加戏。`,
-    },
-    {
-      title: "发病现场",
-      text: `${personaMeta.result_flip || personaMeta.verdict}${restraintText}`,
-    },
-    {
-      title: "弹幕锐评",
-      text: personaMeta.result_comment || personaMeta.quote,
-    },
-    {
-      title: "判定证据",
-      text: `${evidenceText}。这也是这次会把你往 ${blendMeta.secondaryPersonaName} 之外的当前人格上推的主要原因。`,
-    },
-    {
-      title: "混合倾向",
-      text: `这次不是纯单核判定。当前更像 ${personaMeta.display_name || personaMeta.tagline} 占 ${blendMeta.primaryPersonaShare}% ，${blendMeta.secondaryPersonaName} 占 ${blendMeta.secondaryPersonaShare}% 。${blendMeta.blendLabel}，答卷稳定度是 ${stabilityMeta.stabilityScore} / 100。`,
-    },
-    {
-      title: "活到第几集",
-      text: `按你这套脑回路，扔进 ${personaMeta.genres[0]} 赛道大概能活 ${episodeEstimate} 集。${episodeOutcome}${personaMeta.result_ending ? ` ${personaMeta.result_ending}` : ""}`,
-    },
-  ];
-}
-
-function buildVerdictSummary(personaMeta, topDimensions, dimensionRatings) {
-  const controlScore = getDimensionScoreValue(dimensionRatings, "做局清算");
-  const topLabel = topDimensions[0] ? getDimensionDisplayLabel(topDimensions[0]) : "狗血触发器";
-  const controlText = controlScore >= 70 ? "好在你偶尔还知道留证，不算纯送。" : "坏消息是你多数时候连后手都懒得给自己留。";
-  return `${personaMeta.verdict}你最容易被 ${topLabel} 这类桥段点燃。${controlText}`;
-}
-
-function renderPosterDimensionStrip(topDimensions) {
-  dom.posterDimensionStrip.innerHTML = "";
-  topDimensions.forEach((item) => {
-    const chip = document.createElement("span");
-    chip.className = "poster-dimension-chip";
-    chip.textContent = `${getDimensionDisplayLabel(item)} · ${item.level}`;
-    dom.posterDimensionStrip.appendChild(chip);
-  });
-}
-
-function encodeBase64Url(text) {
-  const bytes = new TextEncoder().encode(text);
-  let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function buildResultTokenPayload(
-  personaName,
-  brainlessIndex,
-  verdictLabel,
-  topDimensions,
-  hiddenHits,
-  confidenceMeta,
-  stabilityMeta,
-  blendMeta,
-) {
   return {
-    v: "v1",
-    p: personaName,
-    b: brainlessIndex,
-    l: verdictLabel,
-    c: confidenceMeta?.confidenceScore || 0,
-    cl: confidenceMeta?.confidenceLabel || "",
-    r: confidenceMeta?.runnerUpName || "",
-    g: confidenceMeta?.runnerUpGap || 0,
-    s: stabilityMeta?.stabilityScore || 0,
-    sl: stabilityMeta?.stabilityLabel || "",
-    sp: blendMeta?.secondaryPersonaName || "",
-    ps: blendMeta?.primaryPersonaShare || 0,
-    ss: blendMeta?.secondaryPersonaShare || 0,
-    bl: blendMeta?.blendLabel || "",
-    d: topDimensions.map((item) => [item.name || item.dimension, item.score]),
-    h: hiddenHits.map((item) => [item.name, item.score]),
+    personaName: clearReasons.length && topScore < SCORING_CONFIG.medium_hit_threshold ? HIDDEN_PERSONA : topName,
+    clearReasons: clearReasons.length && topScore < SCORING_CONFIG.medium_hit_threshold ? clearReasons : [],
+    ranked,
+  };
+}
+
+function buildConfidence(personaName, rankedFates, pairPatterns, actionCounts) {
+  const topScore = rankedFates[0][1];
+  const secondScore = rankedFates[1] ? rankedFates[1][1] : 0;
+  const gap = Math.max(topScore - secondScore, 0);
+
+  if (personaName === HIDDEN_PERSONA) {
+    const score = clamp(
+      Math.round(
+        55
+          + Math.min(actionCounts.B, 24)
+          + (actionCounts.D === 0 ? 10 : 0)
+          + (topScore < SCORING_CONFIG.clear_trigger.top_score_below ? 10 : 0),
+      ),
+      55,
+      96,
+    );
+    return { confidenceScore: score, confidenceLabel: getConfidenceLabel(score) };
+  }
+
+  const patternBonus = { DD: 16, CC: 8, CD: 3, DC: 3 }[pairPatterns[personaName] || ""] || 0;
+  const score = clamp(Math.round(32 + topScore * 3 + gap * 2 + patternBonus), 32, 96);
+  return { confidenceScore: score, confidenceLabel: getConfidenceLabel(score) };
+}
+
+function buildStability(pairPatterns) {
+  let base = 48;
+  Object.values(pairPatterns).forEach((pattern) => {
+    if (pattern === "BB") base += 3;
+    else if (pattern === "DD") base += 4;
+    else if (pattern === "CC") base += 2;
+    else if (pattern === "CD" || pattern === "DC") base += 1;
+    else if (pattern === "AB" || pattern === "BA") base += 2;
+    else if (pattern === "AD" || pattern === "DA") base -= 2;
+  });
+  const score = clamp(Math.round(base), 30, 96);
+  return { stabilityScore: score, stabilityLabel: getStabilityLabel(score) };
+}
+
+function buildBlendMeta(personaName, rankedFates) {
+  const [topName, topScore] = rankedFates[0];
+  const second = rankedFates[1] || ["无明显死法", 0];
+  const [secondName, secondScore] = second;
+
+  if (personaName === HIDDEN_PERSONA) {
+    if (topScore <= 0) {
+      return { secondaryPersonaName: "无明显死法", primaryPersonaShare: 100, secondaryPersonaShare: 0, blendLabel: "清醒脱身" };
+    }
+    const secondaryShare = clamp(Math.round(topScore * 4), 18, 38);
+    return {
+      secondaryPersonaName: topName,
+      primaryPersonaShare: 100 - secondaryShare,
+      secondaryPersonaShare: secondaryShare,
+      blendLabel: "差点翻车",
+    };
+  }
+
+  if (secondScore <= 0) {
+    return { secondaryPersonaName: "无明显副死法", primaryPersonaShare: 100, secondaryPersonaShare: 0, blendLabel: "单核坐实" };
+  }
+
+  const gap = Math.max(topScore - secondScore, 0);
+  const secondaryShare = clamp(Math.round(42 - gap * 2), 18, 40);
+  return {
+    secondaryPersonaName: secondName,
+    primaryPersonaShare: 100 - secondaryShare,
+    secondaryPersonaShare: secondaryShare,
+    blendLabel: secondaryShare >= 30 ? "偏混合" : "单核坐实",
+  };
+}
+
+function buildAnswerEvidence(personaName, clearReasons) {
+  if (personaName === HIDDEN_PERSONA) {
+    return state.answers
+      .filter(({ option }) => (option.level || option.id) === "B")
+      .slice(0, 3)
+      .map(({ question, option }) => ({
+        questionId: question.id,
+        stemExcerpt: truncateText(question.stem),
+        optionText: option.text,
+        reason: clearReasons[0] || "暗里收权",
+      }));
+  }
+
+  return state.answers
+    .map(({ question, option }) => ({
+      questionId: question.id,
+      stemExcerpt: truncateText(question.stem),
+      optionText: option.text,
+      impact: Number((option.fate_scores || {})[personaName] || 0),
+      reason: option.level || option.id,
+    }))
+    .filter((item) => item.impact > 0)
+    .sort((left, right) => right.impact - left.impact)
+    .slice(0, 3);
+}
+
+function truncateText(text, limit = 34) {
+  const compact = String(text).replace(/\s+/g, "");
+  return compact.length <= limit ? compact : `${compact.slice(0, limit - 1)}…`;
+}
+
+function buildEpisodeMeta(personaName, pairPatterns, actionCounts, fastDeath) {
+  if (personaName === HIDDEN_PERSONA) {
+    return { episodeEstimate: 99, episodeOutcome: "你能活到片尾字幕，代价是编剧嫌你太难骗。" };
+  }
+  if (fastDeath) {
+    return { episodeEstimate: 3, episodeOutcome: "你前世死得特别快，第 3 集就下线了。" };
+  }
+
+  const pattern = pairPatterns[personaName] || "AA";
+  if (pattern === "DD") return { episodeEstimate: 5, episodeOutcome: "双献祭命中，基本属于开局自带便当。" };
+  if (pattern === "CC") return { episodeEstimate: 10, episodeOutcome: "慢性送头，两次都没踩刹车，通常中段开始被埋。" };
+  if (pattern === "CD" || pattern === "DC") return { episodeEstimate: 7, episodeOutcome: "一边犹豫一边献祭，死得不算最快，但也绝不算晚。" };
+  if (actionCounts.D >= 6) return { episodeEstimate: 6, episodeOutcome: "你整体献祭浓度很高，活不到太后面。" };
+  return { episodeEstimate: 12, episodeOutcome: "你不是立刻暴毙型，更像慢慢把自己演进局里的那类人。" };
+}
+
+function buildPosterStory(personaMeta, topSignals, brainlessIndex, secondaryPersonaName) {
+  const triggerText = topSignals.map((item) => `${item.label}${item.score}`).join(" / ");
+  return `${personaMeta.display_name} 这条线最容易被 ${triggerText} 这些信号点燃。扔进 ${personaMeta.genres[0]} 赛道，你大概率会演成 ${personaMeta.roles[0]}。当前脑残指数 ${brainlessIndex}，险些串线的是 ${secondaryPersonaName}。`;
+}
+
+function cleanResultComment(text) {
+  return String(text || "").replace(/^弹幕锐评[:：]\s*/, "");
+}
+
+function getQuoteLine(result) {
+  if (result.easterEggs.includes("第3集下线")) {
+    return "弹幕锐评：你前世死得特别快，第 3 集就下线了，连回忆杀都没混上。";
+  }
+  if (result.easterEggs.includes("掀桌怪")) {
+    return "弹幕锐评：你不是清醒，你是见局就掀桌，活得快，但也容易先把自己炸出去。";
+  }
+  return `弹幕锐评：${cleanResultComment(result.personaMeta.result_comment)}`;
+}
+
+function buildNeighborSummary(result) {
+  if (result.personaName === HIDDEN_PERSONA) {
+    if (result.secondaryPersonaShare <= 0 || result.secondaryPersonaName === "无明显死法") {
+      return "全线脱身";
+    }
+    return `差点死成 ${result.secondaryPersonaName} · ${result.secondaryPersonaShare}%`;
+  }
+  if (result.secondaryPersonaShare <= 0 || /^无明显/.test(result.secondaryPersonaName)) {
+    return "没明显串线";
+  }
+  return `${result.secondaryPersonaName} · ${result.secondaryPersonaShare}%`;
+}
+
+function buildEvidenceLine(result) {
+  if (result.personaName === HIDDEN_PERSONA) {
+    if (result.clearReasons.length) {
+      return `刹车痕迹：${result.clearReasons.join(" / ")}`;
+    }
+    return "刹车痕迹：这轮几乎没给短剧留口子。";
+  }
+  if (!result.answerEvidence.length) {
+    return "送头证据：这轮还没抓到特别稳定的送头证据。";
+  }
+  return `送头证据：${result.evidenceDigest || "已进入高危死局。"}`;
+}
+
+function buildResultTokenPayload(result) {
+  return {
+    p: result.personaName,
+    b: result.brainlessIndex,
+    v: result.verdictLabel,
+    c: result.confidenceScore,
+    s: result.stabilityScore,
+    n: result.secondaryPersonaName,
+    ps: result.primaryPersonaShare,
+    ss: result.secondaryPersonaShare,
+    ep: result.episodeEstimate,
+    eo: result.episodeOutcome,
+    eg: result.easterEggs,
+    sig: result.topSignals.map((item) => [item.name, item.score]),
   };
 }
 
@@ -1106,297 +589,233 @@ function buildPosterCommand(resultToken) {
   return `给 zzti 生结果图：${resultToken}`;
 }
 
-async function handoffPosterCommand(commandText) {
-  let copied = false;
-  try {
-    await navigator.clipboard.writeText(commandText);
-    copied = true;
-  } catch (error) {
-    copied = false;
-  }
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: "ZZTI 结果图口令",
-        text: commandText,
-      });
-      return "shared";
-    } catch (error) {
-      if (error && error.name === "AbortError") {
-        return copied ? "copied" : "cancelled";
-      }
-    }
-  }
-
-  window.setTimeout(() => {
-    if (window.history.length > 1) {
-      window.history.back();
-    }
-  }, 120);
-
-  return copied ? "copied" : "failed";
+function buildShareText(result) {
+  return [
+    `ZZTI 前世死法：${result.personaName}`,
+    `脑残指数：${result.brainlessIndex} / 100 · ${result.verdictLabel}`,
+    `死因坐实度：${result.confidenceScore} / 100 · ${result.confidenceLabel}`,
+    `送头稳定度：${result.stabilityScore} / 100 · ${result.stabilityLabel}`,
+    `险些串线：${buildNeighborSummary(result)}`,
+    `高频赛道：${result.personaMeta.genres.join(" / ")}`,
+    `常演角色：${result.personaMeta.roles.join(" / ")}`,
+    `活到第几集：${result.episodeEstimate === 99 ? "片尾字幕" : `第 ${result.episodeEstimate} 集`}`,
+    `翻盘动作：${result.personaMeta.comeback_move}`,
+    `判词：${result.personaMeta.verdict}`,
+    `弹幕锐评：${cleanResultComment(result.personaMeta.result_comment)}`,
+  ].join("\n");
 }
 
-function renderDimensionList(dimensionRatings) {
-  dom.dimensionList.innerHTML = "";
-  [...dimensionRatings]
-    .sort((left, right) => getDimensionSalience(right) - getDimensionSalience(left))
-    .slice(0, 6)
-    .forEach((itemData) => {
-    const value = itemData.score;
-    const item = document.createElement("div");
-    item.className = "dimension-item";
-    item.innerHTML = `
-      <div class="dimension-item-head">
-        <span>${itemData.label}</span>
-        <strong>${value}</strong>
-      </div>
-      <div class="dimension-item-meta">
-        <span>${itemData.level}</span>
-        <em>${itemData.summary}</em>
-      </div>
-      <div class="dimension-track">
-        <div class="dimension-bar" style="width:${value}%"></div>
-      </div>
-    `;
-    dom.dimensionList.appendChild(item);
-    });
+async function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
 }
 
-function renderTags(container, values, variant) {
+function renderTags(container, items, className) {
   container.innerHTML = "";
-  container.dataset.variant = variant;
-  values.forEach((value, index) => {
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    if (values.length % 2 === 1 && index === values.length - 1) {
-      tag.classList.add("tag-wide");
-    }
-    tag.textContent = value;
+  items.forEach((item, index) => {
+    const tag = document.createElement("div");
+    tag.className = `tag ${index === items.length - 1 && items.length % 2 === 1 ? "tag-wide" : ""} ${className}`;
+    tag.textContent = item;
     container.appendChild(tag);
   });
 }
 
-function buildShareText(personaName, personaMeta, brainlessIndex, topDimensions, confidenceMeta, stabilityMeta, blendMeta) {
-  return [
-    `ZZTI 测试结果：${personaName}`,
-    `脑残指数：${brainlessIndex}`,
-    `判定置信度：${confidenceMeta.confidenceScore} · ${confidenceMeta.confidenceLabel}`,
-    `答卷稳定度：${stabilityMeta.stabilityScore} · ${stabilityMeta.stabilityLabel}`,
-    `副人格倾向：${blendMeta.secondaryPersonaName}（${blendMeta.secondaryPersonaShare}%）`,
-    `适配赛道：${personaMeta.genres.join(" / ")}`,
-    `高频角色位：${personaMeta.roles.join(" / ")}`,
-    `脑回路偏科：${topDimensions.map((item) => `${getDimensionDisplayLabel(item)}(${item.level})`).join(" / ")}`,
-    "诊断结论：脑子已经被短剧腌透了",
-  ].join("\n");
+function renderSignalList(signalRatings) {
+  dom.dimensionList.innerHTML = "";
+  signalRatings.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "dimension-item";
+    card.innerHTML = `
+      <div class="dimension-item-head">
+        <strong>${escapeHtml(item.label)}</strong>
+        <span>${item.score}</span>
+      </div>
+      <div class="dimension-item-meta">
+        <span>${escapeHtml(item.level)}</span>
+        <em>${escapeHtml(item.summary)}</em>
+      </div>
+      <div class="dimension-track"><div class="dimension-bar" style="width:${item.score}%"></div></div>
+    `;
+    dom.dimensionList.appendChild(card);
+  });
 }
 
-function renderResult() {
-  const dimensionScores = calculateDimensionScores();
-  const dimensionRatings = buildDimensionRatings(dimensionScores);
-  const brainlessIndex = calculateBrainlessIndex(dimensionScores);
-  const personaRanking = rankPersonas(dimensionScores);
-  const personaKey = personaRanking[0]?.name || pickPersona(dimensionScores);
-  const personaMeta = PERSONA_LIBRARY[personaKey];
-  const personaName = personaMeta.display_name || personaKey;
-  const verdictLabel = getVerdictLabel(brainlessIndex);
-  const topDimensions = getTopDimensions(dimensionScores);
-  const hiddenHits = [];
-  const stabilityMeta = buildAnswerStability(state.answers, dimensionScores);
-  const confidenceMeta = buildConfidenceScore(personaRanking, personaMeta, dimensionScores, topDimensions);
-  confidenceMeta.confidenceScore = clamp(
-    Math.round(confidenceMeta.confidenceScore + (stabilityMeta.stabilityScore - 60) * 0.22),
-    28,
-    98,
-  );
-  confidenceMeta.confidenceLabel = getConfidenceLabel(confidenceMeta.confidenceScore);
-  const blendMeta = buildBlendMeta(personaRanking);
-  const answerEvidence = buildAnswerEvidence(state.answers, personaMeta, topDimensions);
-  const detailedAnalysis = buildDetailedAnalysis(
-    personaMeta,
-    brainlessIndex,
-    topDimensions,
-    dimensionRatings,
-    confidenceMeta,
-    stabilityMeta,
-    blendMeta,
-    answerEvidence,
-  );
-  const resultTokenPayload = buildResultTokenPayload(
-    personaName,
-    brainlessIndex,
-    verdictLabel,
-    topDimensions,
-    hiddenHits,
-    confidenceMeta,
-    stabilityMeta,
-    blendMeta,
-  );
-  const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(resultTokenPayload))}`;
-  const posterCommand = buildPosterCommand(resultToken);
-  const personaAsset = personaMeta.asset || "./assets/deco-art.svg";
-  const personaCaption = `${personaName} · ${personaMeta.result_comment || personaMeta.quote}`;
-  const evidenceDigest = buildEvidenceDigest(answerEvidence);
+function renderAnalysisCards(result) {
+  const clearNote = result.clearReasons.length ? `清醒触发：${result.clearReasons.join(" / ")}` : "";
+  const cards = [
+    { title: "前世死因", text: result.personaMeta.verdict },
+    { title: "你在剧里", text: result.personaMeta.result_intro },
+    { title: "常演戏码", text: result.personaMeta.result_scene },
+    { title: "发病现场", text: result.personaMeta.result_flip },
+    { title: "翻盘动作", text: result.personaMeta.comeback_move },
+    { title: "能活几集", text: `${result.episodeEstimate === 99 ? "片尾字幕" : `第 ${result.episodeEstimate} 集`}。${result.episodeOutcome} ${result.personaMeta.result_ending}`.trim() },
+  ];
 
-  dom.resultTitle.textContent = `你是【${personaName}】`;
-  dom.resultSubtitle.textContent = `${personaMeta.result_intro || `很不幸，${personaMeta.tagline}`}这次结果不是单点硬判，旁边还挂着邻近人格和置信度。`;
-  dom.posterTitle.textContent = personaName;
-  dom.posterAnalysis.innerHTML = detailedAnalysis
+  if (clearNote) {
+    cards.push({ title: "刹车痕迹", text: clearNote });
+  }
+  if (result.easterEggs.length) {
+    cards.push({ title: "彩蛋判词", text: result.easterEggs.join(" / ") });
+  }
+
+  dom.posterAnalysis.innerHTML = cards
     .map(
-      (item, index) => `
-        <article class="analysis-card analysis-card-${index + 1}">
-          <span class="analysis-card-title">${item.title}</span>
-          <p>${item.text}</p>
+      (item) => `
+        <article class="analysis-card">
+          <span class="analysis-card-title">${escapeHtml(item.title)}</span>
+          <p>${escapeHtml(item.text)}</p>
         </article>
       `,
     )
     .join("");
-  renderPosterDimensionStrip(topDimensions);
-  dom.brainlessIndex.textContent = `${brainlessIndex}`;
-  dom.brainlessFill.style.width = `${clamp(brainlessIndex, 0, 100)}%`;
-  dom.brainlessVerdict.textContent = `${verdictLabel} · 脑子剩余 ${Math.max(0, 100 - brainlessIndex)}%，但不多。`;
-  dom.resultVerdict.textContent = buildVerdictSummary(personaMeta, topDimensions, dimensionRatings);
-  dom.resultConfidence.textContent = `${confidenceMeta.confidenceScore} / 100 · ${confidenceMeta.confidenceLabel}`;
-  dom.resultStability.textContent = `${stabilityMeta.stabilityScore} / 100 · ${stabilityMeta.stabilityLabel}`;
-  dom.resultNeighbor.textContent = `${blendMeta.secondaryPersonaName} · ${blendMeta.secondaryPersonaShare}%`;
-  dom.resultEvidence.textContent = evidenceDigest;
-  dom.resultQuote.textContent = `弹幕：${personaMeta.result_comment || personaMeta.quote}`;
-  dom.bridgeNote.textContent = "网页里只负责点题。点“回飞书出图”后，会优先帮你复制口令；如果浏览器支持分享，会直接拉起分享；不支持就自己切回飞书粘贴发送。";
+}
+
+function renderSignalStrip(topSignals) {
+  dom.posterDimensionStrip.innerHTML = topSignals
+    .map((item) => `<span class="poster-dimension-chip">${escapeHtml(item.label)} ${item.score}</span>`)
+    .join("");
+}
+
+function buildResult() {
+  const totalQuestions = state.answers.length;
+  const actionCounts = buildActionCounts();
+  const maxDStreak = buildMaxDStreak();
+  const { fateScores, pairPatterns, pairLevels } = calculateFateScores();
+  const { personaName, clearReasons, ranked } = determinePrimaryResult(fateScores, actionCounts);
+  const personaMeta = PERSONA_LIBRARY[personaName];
+  const signalRatings = buildSignalRatings(actionCounts, pairPatterns, totalQuestions);
+  const topSignals = signalRatings.slice().sort((left, right) => right.score - left.score).slice(0, 4);
+  const brainlessIndex = calculateBrainlessIndex(actionCounts, totalQuestions);
+  const verdictLabel = getVerdictLabel(brainlessIndex);
+  const { confidenceScore, confidenceLabel } = buildConfidence(personaName, ranked, pairPatterns, actionCounts);
+  const { stabilityScore, stabilityLabel } = buildStability(pairPatterns);
+  const blendMeta = buildBlendMeta(personaName, ranked);
+  const answerEvidence = buildAnswerEvidence(personaName, clearReasons);
+  const fastDeath = maxDStreak >= SCORING_CONFIG.fast_death_streak;
+  const { episodeEstimate, episodeOutcome } = buildEpisodeMeta(personaName, pairPatterns, actionCounts, fastDeath);
+  const easterEggs = [];
+  if (fastDeath) easterEggs.push("第3集下线");
+  if (actionCounts.A >= SCORING_CONFIG.table_flip_threshold) easterEggs.push("掀桌怪");
+
+  const result = {
+    personaName,
+    personaMeta,
+    brainlessIndex,
+    verdictLabel,
+    confidenceScore,
+    confidenceLabel,
+    stabilityScore,
+    stabilityLabel,
+    actionCounts,
+    fateScores,
+    pairPatterns,
+    pairLevels,
+    clearReasons,
+    signalRatings,
+    topSignals,
+    answerEvidence,
+    evidenceDigest: answerEvidence.map((item) => `${item.questionId}：${item.stemExcerpt}`).join(" / "),
+    episodeEstimate,
+    episodeOutcome,
+    easterEggs,
+    posterStory: buildPosterStory(personaMeta, topSignals.slice(0, 3), brainlessIndex, blendMeta.secondaryPersonaName),
+    ...blendMeta,
+  };
+
+  const tokenPayload = buildResultTokenPayload(result);
+  const resultToken = `${RESULT_TOKEN_PREFIX}${encodeBase64Url(JSON.stringify(tokenPayload))}`;
+  result.resultToken = resultToken;
+  result.posterCommand = buildPosterCommand(resultToken);
+  return result;
+}
+
+function renderResult() {
+  const result = buildResult();
+  const personaAsset = result.personaMeta.asset || "./assets/deco-art.svg";
+  const personaCaption = `${result.personaName} · ${cleanResultComment(result.personaMeta.result_comment)}`;
+
+  dom.resultTitle.textContent = `你前世死成了【${result.personaName}】`;
+  dom.resultSubtitle.textContent = result.personaMeta.tagline;
+  dom.posterTitle.textContent = result.personaName;
+  renderAnalysisCards(result);
+  renderSignalStrip(result.topSignals);
+
+  dom.brainlessIndex.textContent = String(result.brainlessIndex);
+  dom.brainlessFill.style.width = `${result.brainlessIndex}%`;
+  dom.brainlessVerdict.textContent = `${result.verdictLabel} · ${result.personaMeta.tagline}`;
+
+  dom.resultVerdict.textContent = result.personaMeta.verdict;
+  dom.resultConfidence.textContent = `${result.confidenceScore} / 100 · ${result.confidenceLabel}`;
+  dom.resultStability.textContent = `${result.stabilityScore} / 100 · ${result.stabilityLabel}`;
+  dom.resultNeighbor.textContent = buildNeighborSummary(result);
+  dom.resultEvidence.textContent = buildEvidenceLine(result);
+  dom.resultQuote.textContent = getQuoteLine(result);
+
   dom.personaFigureImage.src = personaAsset;
-  dom.personaFigureImage.alt = `${personaName} 角色形象图`;
-  dom.personaFigureHint.textContent = `点击放大 ${personaName} 角色形象`;
+  dom.personaFigureImage.alt = `${result.personaName} 角色形象图`;
+  dom.personaFigureHint.textContent = `点击放大 ${result.personaName} 角色形象`;
   dom.personaFigureImage.onerror = () => {
     dom.personaFigureImage.onerror = null;
     dom.personaFigureImage.src = "./assets/deco-art.svg";
-    dom.personaFigureHint.textContent = `${personaName} 角色图待补`;
+    dom.personaFigureHint.textContent = `${result.personaName} 角色图待补`;
   };
-  dom.personaFigureButton.onclick = () => showLightbox(personaAsset, personaCaption);
+  dom.personaFigureButton.onclick = () => showLightbox(dom.personaFigureImage.currentSrc || dom.personaFigureImage.src, personaCaption);
 
-  renderDimensionList(dimensionRatings);
-  renderTags(dom.genreTags, personaMeta.genres, "genre");
-  renderTags(dom.roleTags, personaMeta.roles, "role");
+  renderSignalList(result.signalRatings);
+  renderTags(dom.genreTags, result.personaMeta.genres, "genre");
+  renderTags(dom.roleTags, result.personaMeta.roles, "role");
 
+  dom.restartButton.onclick = startTest;
   dom.copyButton.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        buildShareText(personaName, personaMeta, brainlessIndex, topDimensions, confidenceMeta, stabilityMeta, blendMeta),
-      );
-      dom.copyButton.textContent = "已复制";
-      window.setTimeout(() => {
-        dom.copyButton.textContent = "复制结果";
-      }, 1200);
-    } catch (error) {
-      dom.copyButton.textContent = "复制失败";
-      window.setTimeout(() => {
-        dom.copyButton.textContent = "复制结果";
-      }, 1200);
-    }
+    await copyText(buildShareText(result));
+    dom.bridgeNote.textContent = "结果摘要已复制。";
   };
-
   dom.posterButton.onclick = async () => {
-    const status = await handoffPosterCommand(posterCommand);
-    if (status === "shared") {
-      dom.posterButton.textContent = "已调起分享";
-      window.setTimeout(() => {
-        dom.posterButton.textContent = "回飞书出图";
-      }, 1400);
-      return;
-    }
-    if (status === "copied") {
-      dom.posterButton.textContent = "已复制，回飞书";
-      window.setTimeout(() => {
-        dom.posterButton.textContent = "回飞书出图";
-      }, 1600);
-      return;
-    }
-    dom.posterButton.textContent = "复制失败";
-    window.setTimeout(() => {
-      dom.posterButton.textContent = "回飞书出图";
-    }, 1400);
+    await copyText(result.posterCommand);
+    dom.bridgeNote.textContent = "回飞书出图口令已复制，切回飞书直接发给 OpenClaw。";
   };
 
   showSection("result");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function applyModelConfig(model) {
-  state.model = model;
-  DIMENSION_ORDER = model.dimensions || [];
-  DIMENSION_METADATA = model.dimension_metadata || [];
-  DIMENSION_META_MAP = Object.fromEntries(DIMENSION_METADATA.map((item) => [item.name, item]));
-  BRAINLESS_WEIGHTS = model.brainless_weights || {};
-  PERSONA_LIBRARY = model.persona_library || {};
-}
-
-function applyProfileConfig(bank) {
-  if (!bank.selection_profiles) {
-    return;
-  }
-  PROFILE_CONFIG = Object.fromEntries(
-    Object.entries(bank.selection_profiles).map(([profile, cfg]) => [
-      profile,
-      {
-        core: cfg.core,
-        calibration: cfg.calibration,
-        antiConflict: cfg.anti_conflict,
-        hidden: cfg.hidden,
-      },
-    ]),
-  );
-}
-
 async function loadResources() {
-  try {
-    const [bankResponse, modelResponse] = await Promise.all([
-      fetch(QUESTION_BANK_URL),
-      fetch(MODEL_CONFIG_URL),
-    ]);
-    if (!bankResponse.ok) {
-      throw new Error(`question bank HTTP ${bankResponse.status}`);
-    }
-    if (!modelResponse.ok) {
-      throw new Error(`model config HTTP ${modelResponse.status}`);
-    }
-    state.bank = await bankResponse.json();
-    applyProfileConfig(state.bank);
-    applyModelConfig(await modelResponse.json());
-    updateStartButton();
-    dom.loadStatus.textContent = "";
-    dom.loadStatus.classList.add("is-hidden");
-  } catch (error) {
-    dom.startButton.textContent = "题库加载失败";
-    dom.loadStatus.classList.remove("is-hidden");
-    dom.loadStatus.textContent = "当前站点需要通过 HTTP 或 GitHub Pages 打开，不能直接 file:// 打开。";
-    console.error(error);
+  const [bankResp, modelResp] = await Promise.all([fetch(QUESTION_BANK_URL), fetch(MODEL_CONFIG_URL)]);
+  if (!bankResp.ok || !modelResp.ok) {
+    throw new Error("题库或模型配置加载失败");
   }
+  const [bank, model] = await Promise.all([bankResp.json(), modelResp.json()]);
+  state.bank = bank;
+  state.model = model;
+  PROFILE_CONFIG = model.profile_config || PROFILE_CONFIG;
+  SCORING_CONFIG = model.scoring || SCORING_CONFIG;
+  PERSONA_LIBRARY = model.persona_library || {};
+  FORMAL_PERSONAS = model.formal_personas || [];
+  HIDDEN_PERSONA = model.hidden_persona || HIDDEN_PERSONA;
+  SIGNAL_METADATA = model.signal_metadata || [];
+  SIGNAL_META_MAP = Object.fromEntries(SIGNAL_METADATA.map((item) => [item.name, item]));
+  updateStartButton();
 }
 
-function bindEvents() {
-  dom.startButton.addEventListener("click", () => {
-    if (!state.bank || !state.model) {
-      return;
-    }
-    startTest();
-  });
-
+function bindStaticEvents() {
+  dom.startButton.addEventListener("click", startTest);
   dom.homeButton.addEventListener("click", () => {
     showSection("landing");
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
-
-  dom.restartButton.addEventListener("click", () => {
-    startTest();
-  });
-
   dom.prevQuestionButton.addEventListener("click", () => {
-    if (state.currentIndex === 0) {
-      return;
-    }
+    if (state.currentIndex <= 0) return;
     state.currentIndex -= 1;
     renderQuestion();
   });
-
   dom.lightboxBackdrop.addEventListener("click", hideLightbox);
   dom.lightboxClose.addEventListener("click", hideLightbox);
   document.addEventListener("keydown", (event) => {
@@ -1406,9 +825,17 @@ function bindEvents() {
   });
 }
 
-function init() {
-  bindEvents();
-  loadResources();
+async function main() {
+  bindStaticEvents();
+  try {
+    await loadResources();
+    dom.loadStatus.classList.add("is-hidden");
+  } catch (error) {
+    dom.loadStatus.classList.remove("is-hidden");
+    dom.loadStatus.textContent = `加载失败：${error.message}`;
+    dom.startButton.disabled = true;
+    dom.startButton.textContent = "题库加载失败";
+  }
 }
 
-init();
+main();
